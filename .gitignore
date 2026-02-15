@@ -1,0 +1,23 @@
+# Visual Studio / .NET
+.vs/
+*.user
+*.suo
+*.vscode/
+
+# Build results
+bin/
+obj/
+TestResults/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Rider
+.idea/
+
+# Logs
+*.log
+
+# NuGet
+*.nupkg

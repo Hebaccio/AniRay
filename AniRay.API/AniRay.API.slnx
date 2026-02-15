@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="../AniRay.Model/AniRay.Model.csproj" Id="6da2f715-37da-4fb9-9747-65c49acb5824" />
+  <Project Path="../AniRay.Services/AniRay.Services.csproj" Id="0570f5e5-4995-4c79-b2c3-f306871226e4" />
+  <Project Path="AniRay.API.csproj">
+    <BuildDependency Project="../AniRay.Services/AniRay.Services.csproj" />
+  </Project>
+</Solution>
