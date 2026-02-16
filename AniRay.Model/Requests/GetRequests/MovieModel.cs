@@ -1,4 +1,5 @@
 ﻿using AniRay.Model.Entities;
+using AniRay.Model.Requests.SearchRequests;
 using System;
 using System.Collections.Generic;
 using System.Text;

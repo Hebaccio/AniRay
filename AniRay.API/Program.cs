@@ -1,8 +1,10 @@
 using AniRay.Model.Data;
 using AniRay.Services.Interfaces;
 using AniRay.Services.Services;
+using AniRay.Services.Services.BasicServices;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using Swashbuckle.AspNetCore.SwaggerUI;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +18,7 @@ builder.Services.AddTransient<IOrderStatusService, OrderStatusService>();
 builder.Services.AddTransient<IUserRoleService, UserRoleService>();
 builder.Services.AddTransient<IUserStatusService, UserStatusService>();
 builder.Services.AddTransient<IVideoFormatService, VideoFormatService>();
+builder.Services.AddTransient<IOrderService, OrderService>();
 
 
 // Controllers
@@ -48,6 +51,7 @@ if (app.Environment.IsDevelopment())
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "My API v1");
         options.RoutePrefix = "swagger";
+        options.DocExpansion(DocExpansion.None);
     });
 
     // Redirect / ? /swagger

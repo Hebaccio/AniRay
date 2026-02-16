@@ -6,14 +6,13 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace AniRay.Services.Services
+namespace AniRay.Services.Services.BasicServices
 {
-    public class VideoFormatService : BasicEntitiesService<VideoFormat>, IVideoFormatService
+    public class AudioFormatService : BasicEntitiesService<AudioFormat>, IAudioFormatService
     {
-        public VideoFormatService(AniRayDbContext context, IMapper mapper)
+        public AudioFormatService(AniRayDbContext context, IMapper mapper)
             : base(context, mapper)
         {
         }
     }
-
 }

@@ -14,8 +14,8 @@ namespace AniRay.Model.Requests.GetRequests
         public string Title { get; set; }
         public string Description { get; set; }
         public DateTime ReleaseDate { get; set; }
-        public VideoFormat VideoFormat { get; set; }
-        public AudioFormat AudioFormat { get; set; }
+        public BasicClassModel VideoFormat { get; set; }
+        public BasicClassModel AudioFormat { get; set; }
         public int DiscCount { get; set; }
         public int Runtime { get; set; }
         public int InStock { get; set; }

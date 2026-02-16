@@ -14,7 +14,17 @@ namespace AniRay.Model.Requests.SearchRequests
         public int? FavoritesLTE { get; set; }
         public string? StudioFTS { get; set; }
         public string? DirectorFTS { get; set; }
-        public string? OrderBy { get; set; }
+        public MovieSortField? OrderBy { get; set; }
+        public SortType? SortType { get; set; }
         public List<int>? GenreIds { get; set; }
+    }
+
+    public enum MovieSortField
+    {
+        Title,
+        ReleaseDate,
+        Favorites,
+        Studio,
+        Director
     }
 }

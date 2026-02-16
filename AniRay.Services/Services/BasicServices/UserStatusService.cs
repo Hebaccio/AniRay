@@ -6,14 +6,13 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace AniRay.Services.Services
+namespace AniRay.Services.Services.BasicServices
 {
-    public class UserRoleService : BasicEntitiesService<UserRole>, IUserRoleService
+    public class UserStatusService : BasicEntitiesService<UserStatus>, IUserStatusService
     {
-        public UserRoleService(AniRayDbContext context, IMapper mapper)
+        public UserStatusService(AniRayDbContext context, IMapper mapper)
             : base(context, mapper)
         {
         }
     }
-
 }

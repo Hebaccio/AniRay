@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace AniRay.Services.Services
+namespace AniRay.Services.Services.BasicServices
 {
     public class GenderService : BasicEntitiesService<Gender>, IGenderService
     {

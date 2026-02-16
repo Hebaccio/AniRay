@@ -93,12 +93,39 @@ namespace AniRay.Services.Services
             if (request == null)
                 return ServiceResult<bool>.Fail("Request cannot be null.");
 
+            if (string.IsNullOrEmpty(request?.Pfp?.Trim()))
+                return ServiceResult<bool>.Fail("Profile picture cannot be null.");
+            if (string.IsNullOrEmpty(request?.Username?.Trim()))
+                return ServiceResult<bool>.Fail("Username cannot be null.");
+            if (string.IsNullOrEmpty(request?.Name?.Trim()))
+                return ServiceResult<bool>.Fail("First name cannot be null.");
+            if (string.IsNullOrEmpty(request?.LastName?.Trim()))
+                return ServiceResult<bool>.Fail("Last name cannot be null.");
+            if (string.IsNullOrEmpty(request?.Email?.Trim()))
+                return ServiceResult<bool>.Fail("Email cannot be null.");
+            if (string.IsNullOrEmpty(request?.Password?.Trim()))
+                return ServiceResult<bool>.Fail("Password cannot be null.");
+            if (request.Birthday == null)
+                return ServiceResult<bool>.Fail("Birthday cannot be null.");
+
+            if (request.Pfp.Length > 300)
+                return ServiceResult<bool>.Fail("Profile picture URL cannot exceed 300 characters.");
+            if (request.Username.Length > 15)
+                return ServiceResult<bool>.Fail("Username cannot exceed 15 characters.");
+            if (request.Name.Length > 20)
+                return ServiceResult<bool>.Fail("First name cannot exceed 20 characters.");
+            if (request.LastName.Length > 30)
+                return ServiceResult<bool>.Fail("Last name cannot exceed 30 characters.");
+            if (request.Email.Length > 50)
+                return ServiceResult<bool>.Fail("Email cannot exceed 50 characters.");
+            if (request.Password.Length < 6 || request.Password.Length > 15)
+                return ServiceResult<bool>.Fail("Password must be between 6 and 15 characters.");
+
             if (IsBirthdayInvalid(request.Birthday))
                 return ServiceResult<bool>.Fail("Birthday cannot be in the future or before January 1, 1900.");
 
             if (IsUsernameTaken(request.Username))
                 return ServiceResult<bool>.Fail("Username already exists.");
-
             if (IsEmailTaken(request.Email))
                 return ServiceResult<bool>.Fail("Email already exists.");
 
@@ -115,20 +142,78 @@ namespace AniRay.Services.Services
 
             return ServiceResult<bool>.Ok(true);
         }
+        #endregion
 
+        #region Update
+        public override ServiceResult<bool> BeforeUpdate(UserUpdateRequest request, User entity)
+        {
+            if (request == null)
+                return ServiceResult<bool>.Fail("Request cannot be null.");
+
+            if (entity == null || entity.UserStatusId != 1)
+                return ServiceResult<bool>.Fail("User does not exist.");
+
+            if (string.IsNullOrEmpty(request?.Pfp?.Trim()))
+                return ServiceResult<bool>.Fail("Profile picture cannot be null.");
+            if (string.IsNullOrEmpty(request?.Username?.Trim()))
+                return ServiceResult<bool>.Fail("Username cannot be null.");
+            if (string.IsNullOrEmpty(request?.Name?.Trim()))
+                return ServiceResult<bool>.Fail("First name cannot be null.");
+            if (string.IsNullOrEmpty(request?.LastName?.Trim()))
+                return ServiceResult<bool>.Fail("Last name cannot be null.");
+            if (string.IsNullOrEmpty(request?.Email?.Trim()))
+                return ServiceResult<bool>.Fail("Email cannot be null.");
+            if (request.Birthday == null)
+                return ServiceResult<bool>.Fail("Birthday cannot be null.");
+
+            if (request.Pfp.Length > 300)
+                return ServiceResult<bool>.Fail("Profile picture URL cannot exceed 300 characters.");
+            if (request.Username.Length > 15)
+                return ServiceResult<bool>.Fail("Username cannot exceed 15 characters.");
+            if (request.Name.Length > 20)
+                return ServiceResult<bool>.Fail("First name cannot exceed 20 characters.");
+            if (request.LastName.Length > 30)
+                return ServiceResult<bool>.Fail("Last name cannot exceed 30 characters.");
+            if (request.Email.Length > 50)
+                return ServiceResult<bool>.Fail("Email cannot exceed 50 characters.");
+
+
+            if (IsBirthdayInvalid(request.Birthday))
+                return ServiceResult<bool>.Fail("Birthday cannot be in the future or before January 1, 1900.");
+
+            if (IsUsernameTaken(request.Username, entity.Id))
+                return ServiceResult<bool>.Fail("Username already exists.");
+
+            if (IsEmailTaken(request.Email, entity.Id))
+                return ServiceResult<bool>.Fail("Email already exists.");
+
+            if (!UserStatusExists(request.UserStatusId))
+                return ServiceResult<bool>.Fail("Selected user status does not exist.");
+
+            return ServiceResult<bool>.Ok(true);
+        }
+        #endregion
+
+        #region Insert/Update Filters
         private bool IsBirthdayInvalid(DateOnly? birthday)
         {
+            if (!birthday.HasValue)
+                return true;
+
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
             var earliestAllowed = new DateOnly(1900, 1, 1);
-            return birthday > today || birthday < earliestAllowed;
+
+            return birthday.Value > today || birthday.Value < earliestAllowed;
         }
         private bool IsUsernameTaken(string username)
         {
-            return Context.Set<User>().Any(u => u.Username == username && u.UserRoleId != 1);
+            return Context.Set<User>()
+                .Any(u => u.Username == username);
         }
         private bool IsEmailTaken(string email)
         {
-            return Context.Set<User>().Any(u => u.Email == email && u.UserRoleId != 1);
+            return Context.Set<User>()
+                .Any(u => u.Email == email);
         }
         private ServiceResult<bool> ValidateForeignKeys(UserInsertRequest request)
         {
@@ -143,40 +228,23 @@ namespace AniRay.Services.Services
 
             return ServiceResult<bool>.Ok(true);
         }
-        #endregion
-
-        #region Update
-        public override ServiceResult<bool> BeforeUpdate(UserUpdateRequest request, User entity)
+        private bool IsUsernameTaken(string username, int currentUserId)
         {
-            if (request == null)
-                return ServiceResult<bool>.Fail("Request cannot be null.");
-
-            if (entity.UserStatusId != 1)
-                return ServiceResult<bool>.Fail("User does not exist.");
-
-            if (IsUsernameTaken(request.Username, entity.Id))
-                return ServiceResult<bool>.Fail("Username already exists.");
-
-            if (IsEmailTaken(request.Email, entity.Id))
-                return ServiceResult<bool>.Fail("Email already exists.");
-
-            if (IsBirthdayInvalid(request.Birthday))
-                return ServiceResult<bool>.Fail("Birthday cannot be in the future or before January 1, 1900.");
-
-            if (!UserStatusExists(request.UserStatusId))
-                return ServiceResult<bool>.Fail("Selected user status does not exist.");
-
-            return ServiceResult<bool>.Ok(true);
+            return Context.Set<User>()
+                .Any(u => u.Username == username &&
+                          u.Id != currentUserId);
         }
-
-        private bool IsUsernameTaken(string username, int currentUserId) =>
-            Context.Set<User>().Any(u => u.Username == username && u.Id != currentUserId && u.UserRoleId != 1);
-
-        private bool IsEmailTaken(string email, int currentUserId) =>
-            Context.Set<User>().Any(u => u.Email == email && u.Id != currentUserId && u.UserRoleId != 1);
-
-        private bool UserStatusExists(int statusId) =>
-            Context.Set<UserStatus>().Any(s => s.Id == statusId);
+        private bool IsEmailTaken(string email, int currentUserId)
+        {
+            return Context.Set<User>()
+                .Any(u => u.Email == email &&
+                          u.Id != currentUserId);
+        }
+        private bool UserStatusExists(int statusId)
+        {
+            return Context.Set<UserStatus>()
+                .Any(s => s.Id == statusId);
+        }
         #endregion
 
         #region SoftDelete

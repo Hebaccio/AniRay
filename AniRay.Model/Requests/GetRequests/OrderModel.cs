@@ -1,27 +1,18 @@
-﻿using AniRay.Model.Requests.GetRequests;
+﻿using AniRay.Model.Entities;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
-namespace AniRay.Model.Entities
+namespace AniRay.Model.Requests.GetRequests
 {
-    public class Order
+    public class OrderModel
     {
-        [Key]
         public int Id { get; set; }
         public DateTime DateTime { get; set; }
         public decimal FullPrice { get; set; }
-
-        [ForeignKey("OrderStatusId")]
-        public int OrderStatusId { get; set; }
-        public OrderStatus OrderStatus { get; set; }
-
-        [ForeignKey("UserId")]
-        public int UserId { get; set; }
-        public User User { get; set; }
-
+        public BasicClassModel OrderStatus { get; set; }
+        public UserOrderModel User { get; set; }
         public string UserName { get; set; }
         public string UserMail { get; set; }
         public string UserPhone { get; set; }
@@ -31,6 +22,6 @@ namespace AniRay.Model.Entities
         public string UserAdress { get; set; }
         public string UserNotes { get; set; }
 
-        public virtual ICollection<OrderBluRay> BluRay { get; set; } = new List<OrderBluRay>();
+        public virtual ICollection<OrderBluRayModel> BluRay { get; set; } = new List<OrderBluRayModel>();
     }
 }

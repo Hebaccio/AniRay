@@ -11,7 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace AniRay.Services.Services
+namespace AniRay.Services.Services.BasicServices
 {
     public class BasicEntitiesService<TDbEntity> : 
         BaseCRUDService<BasicClassModel, BasicClassSearchObject, TDbEntity, BasicClassInsertRequest, BasicClassUpdateRequest>

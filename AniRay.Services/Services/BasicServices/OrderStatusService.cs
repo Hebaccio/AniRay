@@ -6,11 +6,11 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace AniRay.Services.Services
+namespace AniRay.Services.Services.BasicServices
 {
-    public class GenreService : BasicEntitiesService<Genre>, IGenreService
+    public class OrderStatusService : BasicEntitiesService<OrderStatus>, IOrderStatusService
     {
-        public GenreService(AniRayDbContext context, IMapper mapper)
+        public OrderStatusService(AniRayDbContext context, IMapper mapper)
             : base(context, mapper)
         {
         }
