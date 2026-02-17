@@ -8,6 +8,7 @@ namespace AniRay.Model.Requests.SearchRequests
 {
     public class OrderSearchObject : BaseSearchObject
     {
+        public int? UserId { get; set; }
         public DateTime? DateTimeGTE { get; set; }
         public DateTime? DateTimeLTE { get; set; }
         public decimal? FullPriceGTE { get; set; }

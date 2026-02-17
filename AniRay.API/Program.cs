@@ -19,6 +19,7 @@ builder.Services.AddTransient<IUserRoleService, UserRoleService>();
 builder.Services.AddTransient<IUserStatusService, UserStatusService>();
 builder.Services.AddTransient<IVideoFormatService, VideoFormatService>();
 builder.Services.AddTransient<IOrderService, OrderService>();
+builder.Services.AddTransient<IUserCartService, UserCartService>();
 
 
 // Controllers

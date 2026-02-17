@@ -34,9 +34,6 @@ namespace AniRay.Model.Requests.UpdateRequests
         public DateOnly? Birthday { get; set; }
 
         public bool TwoFA { get; set; } = false;
-
-        [Required(ErrorMessage = "User status is required.")]
-        public int UserStatusId { get; set; }
     }
 
 }

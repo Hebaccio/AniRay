@@ -31,6 +31,7 @@ namespace AniRay.Model.Data
         public DbSet<UserFavorites> UserFavorites { get; set; }
         public DbSet<BluRayCart> BluRayCarts { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<UserCart> UserCarts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -88,34 +88,21 @@ namespace AniRay.Services.Services
         #region Insert
         public override ServiceResult<bool> BeforeInsert(MovieInsertRequest request, Movie entity)
         {
-            if (string.IsNullOrEmpty(request?.Image?.Trim()))
-                return ServiceResult<bool>.Fail("Image URL cannot be null");
-            if (string.IsNullOrEmpty(request?.Title?.Trim()))
-                return ServiceResult<bool>.Fail("Movie Title cannot be null");
-            if (string.IsNullOrEmpty(request?.Description?.Trim()))
-                return ServiceResult<bool>.Fail("Movie Description cannot be null");
-            if (request?.ReleaseDate == null)
-                return ServiceResult<bool>.Fail("Release Date cannot be null");
-            if (string.IsNullOrEmpty(request?.Studio?.Trim()))
-                return ServiceResult<bool>.Fail("Studio Name cannot be null");
+            var nullCheck = BeforeInsertNullCheck(request);
+            if (!nullCheck.Success)
+                return nullCheck;
 
-            if (request.Image.Length > 500)
-                return ServiceResult<bool>.Fail("Image URL cannot be longer than 500 characters");
-            if (request.Title.Length > 200)
-                return ServiceResult<bool>.Fail("Title cannot be longer than 200 characters");
-            if (request.Description.Length > 1000)
-                return ServiceResult<bool>.Fail("Description cannot be longer than 1000 characters");
-            if (request.Studio.Length > 100)
-                return ServiceResult<bool>.Fail("Studio name cannot be longer than 100 characters");
-            if (!string.IsNullOrEmpty(request?.Director?.Trim()) && request?.Director.Length > 100)
-                return ServiceResult<bool>.Fail("Director name cannot be longer than 100 characters");
+            var validationCheck = BeforeInsertValidation(request);
+            if (!validationCheck.Success)
+                return validationCheck;
 
-            if (IsDateInvalid(request))
+            if (IsDateInvalid(request.ReleaseDate))
                 return ServiceResult<bool>.Fail("Release date cannot be before August 17, 1908 or more than one week in the future.");
 
             if (!GenreCheck(request, entity))
                 return ServiceResult<bool>.Fail("One or more genres do not exist.");
 
+            entity.IsDeleted = false;
             entity.Favorites = 0;
 
             return ServiceResult<bool>.Ok(true);
@@ -125,29 +112,15 @@ namespace AniRay.Services.Services
         #region Update
         public override ServiceResult<bool> BeforeUpdate(MovieUpdateRequest request, Movie entity)
         {
-            if (string.IsNullOrEmpty(request?.Image?.Trim()))
-                return ServiceResult<bool>.Fail("Image URL cannot be null");
-            if (string.IsNullOrEmpty(request?.Title?.Trim()))
-                return ServiceResult<bool>.Fail("Movie Title cannot be null");
-            if (string.IsNullOrEmpty(request?.Description?.Trim()))
-                return ServiceResult<bool>.Fail("Movie Description cannot be null");
-            if (request?.ReleaseDate == null)
-                return ServiceResult<bool>.Fail("Release Date cannot be null");
-            if (string.IsNullOrEmpty(request?.Studio?.Trim()))
-                return ServiceResult<bool>.Fail("Studio Name cannot be null");
+            var nullCheck = BeforeUpdateNullCheck(request);
+            if (!nullCheck.Success)
+                return nullCheck;
 
-            if (request.Image.Length > 300)
-                return ServiceResult<bool>.Fail("Image URL cannot be longer than 300 characters");
-            if (request.Title.Length > 150)
-                return ServiceResult<bool>.Fail("Title cannot be longer than 150 characters");
-            if (request.Description.Length > 1000)
-                return ServiceResult<bool>.Fail("Description cannot be longer than 1000 characters");
-            if (request.Studio.Length > 100)
-                return ServiceResult<bool>.Fail("Studio name cannot be longer than 100 characters");
-            if (!string.IsNullOrEmpty(request?.Director?.Trim()) && request?.Director.Length > 100)
-                return ServiceResult<bool>.Fail("Director name cannot be longer than 100 characters");
+            var validationCheck = BeforeUpdateValidation(request);
+            if (!validationCheck.Success)
+                return validationCheck;
 
-            if (IsDateInvalid(request))
+            if (IsDateInvalid(request.ReleaseDate))
                 return ServiceResult<bool>.Fail("Release date cannot be before August 17, 1908 or more than one week in the future.");
 
             var genreResult = SyncMovieGenres(entity, request.GenreIds);
@@ -159,18 +132,45 @@ namespace AniRay.Services.Services
         #endregion
 
         #region Insert/Update Helpers
+
+        #region Insert Helpers
+        private ServiceResult<bool> BeforeInsertNullCheck(MovieInsertRequest request)
+        {
+            if (string.IsNullOrEmpty(request?.Image?.Trim()))
+                return ServiceResult<bool>.Fail("Image URL cannot be null");
+            if (string.IsNullOrEmpty(request?.Title?.Trim()))
+                return ServiceResult<bool>.Fail("Movie Title cannot be null");
+            if (string.IsNullOrEmpty(request?.Description?.Trim()))
+                return ServiceResult<bool>.Fail("Movie Description cannot be null");
+            if (request?.ReleaseDate == null)
+                return ServiceResult<bool>.Fail("Release Date cannot be null");
+            if (string.IsNullOrEmpty(request?.Studio?.Trim()))
+                return ServiceResult<bool>.Fail("Studio Name cannot be null");
+
+            return ServiceResult<bool>.Ok(true);
+        }
+        private ServiceResult<bool> BeforeInsertValidation(MovieInsertRequest request)
+        {
+            if (request.Image.Length > 500)
+                return ServiceResult<bool>.Fail("Image URL cannot be longer than 500 characters");
+            if (request.Title.Length > 200)
+                return ServiceResult<bool>.Fail("Title cannot be longer than 200 characters");
+            if (request.Description.Length > 1000)
+                return ServiceResult<bool>.Fail("Description cannot be longer than 1000 characters");
+            if (request.Studio.Length > 100)
+                return ServiceResult<bool>.Fail("Studio name cannot be longer than 100 characters");
+            if (!string.IsNullOrEmpty(request?.Director?.Trim()) && request?.Director.Length > 100)
+                return ServiceResult<bool>.Fail("Director name cannot be longer than 100 characters");
+
+            return ServiceResult<bool>.Ok(true);
+        }
         public bool GenreCheck(MovieInsertRequest request, Movie entity)
         {
             if (request.GenreIds == null || !request.GenreIds.Any())
                 return true;
 
-            var distinctGenreIds = request.GenreIds.Distinct().ToList();
-
-            var existingGenreIds = Context.Set<Genre>()
-                .Where(g => distinctGenreIds.Contains(g.Id))
-                .Select(g => g.Id)
-                .ToList();
-
+            var distinctGenreIds = request.GenreIds.Distinct().ToHashSet();
+            var existingGenreIds = Context.Set<Genre>().Where(g => distinctGenreIds.Contains(g.Id)).Select(g => g.Id).ToHashSet();
             if (existingGenreIds.Count != distinctGenreIds.Count)
                 return false;
 
@@ -184,56 +184,76 @@ namespace AniRay.Services.Services
 
             return true;
         }
-        public bool IsDateInvalid(MovieInsertRequest request)
-        {
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
-            var oneWeekFromNow = today.AddDays(7);
-            var earliestAllowedDate = new DateOnly(1908, 8, 17);
+        #endregion
 
-            return request.ReleaseDate > oneWeekFromNow || request.ReleaseDate < earliestAllowedDate;
+        #region Update Helpers
+        private ServiceResult<bool> BeforeUpdateNullCheck(MovieUpdateRequest request)
+        {
+            if (string.IsNullOrEmpty(request?.Image?.Trim()))
+                return ServiceResult<bool>.Fail("Image URL cannot be null");
+            if (string.IsNullOrEmpty(request?.Title?.Trim()))
+                return ServiceResult<bool>.Fail("Movie Title cannot be null");
+            if (string.IsNullOrEmpty(request?.Description?.Trim()))
+                return ServiceResult<bool>.Fail("Movie Description cannot be null");
+            if (request?.ReleaseDate == null)
+                return ServiceResult<bool>.Fail("Release Date cannot be null");
+            if (string.IsNullOrEmpty(request?.Studio?.Trim()))
+                return ServiceResult<bool>.Fail("Studio Name cannot be null");
+
+            return ServiceResult<bool>.Ok(true);
         }
-        private bool IsDateInvalid(MovieUpdateRequest request)
+        private ServiceResult<bool> BeforeUpdateValidation(MovieUpdateRequest request)
         {
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
-            var oneWeekFromNow = today.AddDays(7);
-            var earliestAllowedDate = new DateOnly(1908, 8, 17);
+            if (request.Image.Length > 300)
+                return ServiceResult<bool>.Fail("Image URL cannot be longer than 300 characters");
+            if (request.Title.Length > 150)
+                return ServiceResult<bool>.Fail("Title cannot be longer than 150 characters");
+            if (request.Description.Length > 1000)
+                return ServiceResult<bool>.Fail("Description cannot be longer than 1000 characters");
+            if (request.Studio.Length > 100)
+                return ServiceResult<bool>.Fail("Studio name cannot be longer than 100 characters");
+            if (!string.IsNullOrEmpty(request?.Director?.Trim()) && request?.Director.Length > 100)
+                return ServiceResult<bool>.Fail("Director name cannot be longer than 100 characters");
 
-            return request.ReleaseDate > oneWeekFromNow || request.ReleaseDate < earliestAllowedDate;
+            return ServiceResult<bool>.Ok(true);
         }
         private ServiceResult<bool> SyncMovieGenres(Movie entity, IEnumerable<int>? genreIds)
         {
             if (genreIds == null)
                 return ServiceResult<bool>.Ok(true);
 
-            Context.Entry(entity)
-                .Collection(x => x.MovieGenres)
-                .Load();
+            Context.Entry(entity).Collection(x => x.MovieGenres).Load();
 
-            var distinctGenreIds = genreIds.Distinct().ToList();
-
-            var existingGenreIds = Context.Set<Genre>()
-                .Where(g => distinctGenreIds.Contains(g.Id))
-                .Select(g => g.Id)
-                .ToList();
-
-            if (existingGenreIds.Count != distinctGenreIds.Count)
+            var distinctGenreIds = genreIds.Distinct().ToHashSet();
+            var existingCount = Context.Set<Genre>().Count(g => distinctGenreIds.Contains(g.Id));
+            if (existingCount != distinctGenreIds.Count)
                 return ServiceResult<bool>.Fail("One or more genres do not exist.");
 
-            var currentGenreIds = entity.MovieGenres.Select(mg => mg.GenreId).ToList();
+            var currentGenreIds = entity.MovieGenres.Select(mg => mg.GenreId).ToHashSet();
+
             var genresToAdd = distinctGenreIds.Except(currentGenreIds);
             foreach (var genreId in genresToAdd)
-            {
                 entity.MovieGenres.Add(new MovieGenre { GenreId = genreId });
-            }
 
             var genresToRemove = entity.MovieGenres.Where(mg => !distinctGenreIds.Contains(mg.GenreId)).ToList();
             foreach (var mg in genresToRemove)
-            {
                 entity.MovieGenres.Remove(mg);
-            }
 
             return ServiceResult<bool>.Ok(true);
         }
+        #endregion
+
+        #region Combined Helpers
+        private bool IsDateInvalid(DateOnly? ReleaseDate)
+        {
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var oneWeekFromNow = today.AddDays(7);
+            var earliestAllowedDate = new DateOnly(1908, 8, 17);
+
+            return ReleaseDate > oneWeekFromNow || ReleaseDate < earliestAllowedDate;
+        }
+        #endregion
+
         #endregion
 
         #region SoftDelete

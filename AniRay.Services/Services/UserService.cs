@@ -23,7 +23,7 @@ namespace AniRay.Services.Services
         public UserService(AniRayDbContext context, IMapper mapper) : base(context, mapper) 
         {}
 
-        #region Get Inserts
+        #region Get Filters
         public override IQueryable<User> AddFilters(UserSearchObject search, IQueryable<User> query)
         {
             query = base.AddFilters(search, query);
@@ -83,7 +83,6 @@ namespace AniRay.Services.Services
             query = query.Include(u => u.Gender);
 
             return query;
-
         }
         #endregion
 
@@ -93,6 +92,70 @@ namespace AniRay.Services.Services
             if (request == null)
                 return ServiceResult<bool>.Fail("Request cannot be null.");
 
+            var nullCheck = BeforeInsertNullCheck(request);
+            if (!nullCheck.Success)
+                return nullCheck;
+
+            var validationCheck = BeforeInsertValidation(request);
+            if (!validationCheck.Success)
+                return validationCheck;
+
+            if (IsBirthdayInvalid(request.Birthday))
+                return ServiceResult<bool>.Fail("Birthday cannot be in the future or before January 1, 1900.");
+            if (IsUsernameTaken(request.Username, null))
+                return ServiceResult<bool>.Fail("Username already exists.");
+            if (IsEmailTaken(request.Email, null))
+                return ServiceResult<bool>.Fail("Email already exists.");
+
+            var fkResult = ValidateForeignKeys(request);
+            if (!fkResult.Success)
+                return fkResult;
+
+            PasswordHelper.CreatePasswordHash(request.Password, out byte[] hash, out byte[] salt);
+            entity.PasswordHash = hash;
+            entity.PasswordSalt = salt;
+
+            entity.CreatedAt = DateTime.UtcNow;
+            entity.UserStatusId = (int)CoreData.CoreUserStatus.Active;
+            entity.UserRoleId = (int)CoreData.CoreUserRole.User;
+
+            return ServiceResult<bool>.Ok(true);
+        }
+        #endregion
+
+        #region Update
+        public override ServiceResult<bool> BeforeUpdate(UserUpdateRequest request, User entity)
+        {
+            if (request == null)
+                return ServiceResult<bool>.Fail("Request cannot be null.");
+
+            if (entity == null || entity.UserStatusId != 1)
+                return ServiceResult<bool>.Fail("User does not exist.");
+
+            var nullCheck = BeforeUpdateNullCheck(request);
+            if (!nullCheck.Success)
+                return nullCheck;
+
+            var validationCheck = BeforeUpdateValidation(request);
+            if (!validationCheck.Success)
+                return validationCheck;
+
+            if (IsBirthdayInvalid(request.Birthday))
+                return ServiceResult<bool>.Fail("Birthday cannot be in the future or before January 1, 1900.");
+            if (IsUsernameTaken(request.Username, entity.Id))
+                return ServiceResult<bool>.Fail("Username already exists.");
+            if (IsEmailTaken(request.Email, entity.Id))
+                return ServiceResult<bool>.Fail("Email already exists.");
+
+            return ServiceResult<bool>.Ok(true);
+        }
+        #endregion
+
+        #region Insert/Update Helpers
+
+        #region Insert Helpers
+        private ServiceResult<bool> BeforeInsertNullCheck(UserInsertRequest request)
+        {
             if (string.IsNullOrEmpty(request?.Pfp?.Trim()))
                 return ServiceResult<bool>.Fail("Profile picture cannot be null.");
             if (string.IsNullOrEmpty(request?.Username?.Trim()))
@@ -108,6 +171,10 @@ namespace AniRay.Services.Services
             if (request.Birthday == null)
                 return ServiceResult<bool>.Fail("Birthday cannot be null.");
 
+            return ServiceResult<bool>.Ok(true);
+        }
+        private ServiceResult<bool> BeforeInsertValidation(UserInsertRequest request)
+        {
             if (request.Pfp.Length > 300)
                 return ServiceResult<bool>.Fail("Profile picture URL cannot exceed 300 characters.");
             if (request.Username.Length > 15)
@@ -121,38 +188,20 @@ namespace AniRay.Services.Services
             if (request.Password.Length < 6 || request.Password.Length > 15)
                 return ServiceResult<bool>.Fail("Password must be between 6 and 15 characters.");
 
-            if (IsBirthdayInvalid(request.Birthday))
-                return ServiceResult<bool>.Fail("Birthday cannot be in the future or before January 1, 1900.");
-
-            if (IsUsernameTaken(request.Username))
-                return ServiceResult<bool>.Fail("Username already exists.");
-            if (IsEmailTaken(request.Email))
-                return ServiceResult<bool>.Fail("Email already exists.");
-
-            var fkResult = ValidateForeignKeys(request);
-            if (!fkResult.Success)
-                return fkResult;
-
-            PasswordHelper.CreatePasswordHash(request.Password, out byte[] hash, out byte[] salt);
-            entity.PasswordHash = hash;
-            entity.PasswordSalt = salt;
-
-            entity.CreatedAt = DateTime.UtcNow;
-            entity.UserStatusId = 1;
+            return ServiceResult<bool>.Ok(true);
+        }
+        private ServiceResult<bool> ValidateForeignKeys(UserInsertRequest request)
+        {
+            if (!Context.Set<Gender>().Any(x => x.Id == request.GenderId))
+                return ServiceResult<bool>.Fail("Selected gender does not exist.");
 
             return ServiceResult<bool>.Ok(true);
         }
         #endregion
 
-        #region Update
-        public override ServiceResult<bool> BeforeUpdate(UserUpdateRequest request, User entity)
+        #region Update Helpers
+        private ServiceResult<bool> BeforeUpdateNullCheck(UserUpdateRequest request)
         {
-            if (request == null)
-                return ServiceResult<bool>.Fail("Request cannot be null.");
-
-            if (entity == null || entity.UserStatusId != 1)
-                return ServiceResult<bool>.Fail("User does not exist.");
-
             if (string.IsNullOrEmpty(request?.Pfp?.Trim()))
                 return ServiceResult<bool>.Fail("Profile picture cannot be null.");
             if (string.IsNullOrEmpty(request?.Username?.Trim()))
@@ -166,6 +215,10 @@ namespace AniRay.Services.Services
             if (request.Birthday == null)
                 return ServiceResult<bool>.Fail("Birthday cannot be null.");
 
+            return ServiceResult<bool>.Ok(true);
+        }
+        private ServiceResult<bool> BeforeUpdateValidation(UserUpdateRequest request)
+        {
             if (request.Pfp.Length > 300)
                 return ServiceResult<bool>.Fail("Profile picture URL cannot exceed 300 characters.");
             if (request.Username.Length > 15)
@@ -177,24 +230,25 @@ namespace AniRay.Services.Services
             if (request.Email.Length > 50)
                 return ServiceResult<bool>.Fail("Email cannot exceed 50 characters.");
 
-
-            if (IsBirthdayInvalid(request.Birthday))
-                return ServiceResult<bool>.Fail("Birthday cannot be in the future or before January 1, 1900.");
-
-            if (IsUsernameTaken(request.Username, entity.Id))
-                return ServiceResult<bool>.Fail("Username already exists.");
-
-            if (IsEmailTaken(request.Email, entity.Id))
-                return ServiceResult<bool>.Fail("Email already exists.");
-
-            if (!UserStatusExists(request.UserStatusId))
-                return ServiceResult<bool>.Fail("Selected user status does not exist.");
-
             return ServiceResult<bool>.Ok(true);
         }
         #endregion
 
-        #region Insert/Update Filters
+        #region Combined Helpers
+        private bool IsUsernameTaken(string username, int? currentUserId)
+        {
+            if(currentUserId == null)
+                return Context.Set<User>().Any(u => u.Username == username);
+
+            return Context.Set<User>().Any(u => u.Username == username && u.Id != currentUserId);
+        }
+        private bool IsEmailTaken(string email, int? currentUserId)
+        {
+            if (currentUserId == null)
+                return Context.Set<User>().Any(u => u.Email == email);
+
+            return Context.Set<User>().Any(u => u.Email == email && u.Id != currentUserId);
+        }
         private bool IsBirthdayInvalid(DateOnly? birthday)
         {
             if (!birthday.HasValue)
@@ -205,46 +259,8 @@ namespace AniRay.Services.Services
 
             return birthday.Value > today || birthday.Value < earliestAllowed;
         }
-        private bool IsUsernameTaken(string username)
-        {
-            return Context.Set<User>()
-                .Any(u => u.Username == username);
-        }
-        private bool IsEmailTaken(string email)
-        {
-            return Context.Set<User>()
-                .Any(u => u.Email == email);
-        }
-        private ServiceResult<bool> ValidateForeignKeys(UserInsertRequest request)
-        {
-            if (!Context.Set<UserRole>().Any(x => x.Id == request.UserRoleId))
-                return ServiceResult<bool>.Fail("Selected user role does not exist.");
+        #endregion
 
-            if (!Context.Set<UserStatus>().Any(x => x.Id == request.UserStatusId))
-                return ServiceResult<bool>.Fail("Selected user status does not exist.");
-
-            if (!Context.Set<Gender>().Any(x => x.Id == request.GenderId))
-                return ServiceResult<bool>.Fail("Selected gender does not exist.");
-
-            return ServiceResult<bool>.Ok(true);
-        }
-        private bool IsUsernameTaken(string username, int currentUserId)
-        {
-            return Context.Set<User>()
-                .Any(u => u.Username == username &&
-                          u.Id != currentUserId);
-        }
-        private bool IsEmailTaken(string email, int currentUserId)
-        {
-            return Context.Set<User>()
-                .Any(u => u.Email == email &&
-                          u.Id != currentUserId);
-        }
-        private bool UserStatusExists(int statusId)
-        {
-            return Context.Set<UserStatus>()
-                .Any(s => s.Id == statusId);
-        }
         #endregion
 
         #region SoftDelete
@@ -254,7 +270,7 @@ namespace AniRay.Services.Services
             if (entity == null)
                 return ServiceResult<string>.Fail($"User is not found in the database");
 
-            entity.UserStatusId = 3;
+            entity.UserStatusId = (int)CoreData.CoreUserStatus.Deleted;
             Context.SaveChanges();
 
             return ServiceResult<string>.Ok($"User {entity.Name} {entity.LastName}, is succesfully deleted");

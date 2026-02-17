@@ -22,7 +22,7 @@ namespace AniRay.Model.Requests.InsertRequests
         public string Description { get; set; }
 
         [Required(ErrorMessage = "Release date is required.")]
-        public DateTime? ReleaseDate { get; set; }
+        public DateOnly? ReleaseDate { get; set; }
 
         [Required(ErrorMessage = "Video format is required.")]
         public int? VideoFormatId { get; set; }
@@ -44,10 +44,6 @@ namespace AniRay.Model.Requests.InsertRequests
         [Required(ErrorMessage = "Stock is required.")]
         [Range(0, 100, ErrorMessage = "Stock cannot be negative or greater than 100.")]
         public int? InStock { get; set; }
-
-        [Required(ErrorMessage = "Subtitle language is required.")]
-        [MaxLength(50, ErrorMessage = "Subtitle language cannot exceed 50 characters.")]
-        public string SubtitleLanguage { get; set; }
 
         [Required(ErrorMessage = "Price is required.")]
         [Range(1, double.MaxValue, ErrorMessage = "Price must be greater than 0.")]

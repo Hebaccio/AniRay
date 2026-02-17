@@ -40,12 +40,6 @@ namespace AniRay.Model.Requests.InsertRequests
 
         public bool TwoFA { get; set; } = false;
 
-        [Required(ErrorMessage = "User role is required.")]
-        public int UserRoleId { get; set; }
-
-        [Required(ErrorMessage = "User status is required.")]
-        public int UserStatusId { get; set; }
-
         [Required(ErrorMessage = "Gender is required.")]
         public int GenderId { get; set; }
     }
