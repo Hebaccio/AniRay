@@ -71,7 +71,7 @@ namespace AniRay.API.Controllers.EntityControllers
         [HttpPost("Login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+            var user = await _context.Users.Where(u => u.Email == dto.Email).Include(u => u.UserRole).FirstOrDefaultAsync();
             if (user == null) return Unauthorized();
 
             var isPasswordValid = PasswordHelper.VerifyPassword(dto.Password, user.PasswordHash, user.PasswordSalt);
