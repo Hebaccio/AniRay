@@ -1,10 +1,18 @@
 using AniRay.Model.Data;
+using AniRay.Model.Requests.AuthRequests;
 using AniRay.Services.Interfaces;
 using AniRay.Services.Services;
+using AniRay.Services.Services.AuthentificationServices;
 using AniRay.Services.Services.BasicServices;
 using Mapster;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Swashbuckle.AspNetCore.SwaggerUI;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.OpenApi;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,10 +28,12 @@ builder.Services.AddTransient<IUserStatusService, UserStatusService>();
 builder.Services.AddTransient<IVideoFormatService, VideoFormatService>();
 builder.Services.AddTransient<IOrderService, OrderService>();
 builder.Services.AddTransient<IUserCartService, UserCartService>();
+builder.Services.AddScoped<IMailService, MailService>();
+builder.Services.AddScoped<ITokenService, JwtTokenService>();
+
 
 
 // Controllers
-//builder.Services.AddControllers();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -31,6 +41,33 @@ builder.Services.AddControllers()
             .Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 
+
+#region Authentication & JWT
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)
+            ),
+
+            RoleClaimType = ClaimTypes.Role
+        };
+    });
+
+builder.Services.AddAuthorization();
+#endregion
+
+builder.Services.Configure<EmailSettings>(
+    builder.Configuration.GetSection("EmailSettings"));
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -61,6 +98,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

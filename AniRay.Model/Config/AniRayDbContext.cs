@@ -32,6 +32,7 @@ namespace AniRay.Model.Data
         public DbSet<BluRayCart> BluRayCarts { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<UserCart> UserCarts { get; set; }
+        public DbSet<TwoWayAuth> twoWayAuths { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
