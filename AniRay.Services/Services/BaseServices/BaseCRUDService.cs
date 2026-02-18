@@ -5,66 +5,108 @@ using System.Collections.Generic;
 using System.Text;
 using MapsterMapper;
 using AniRay.Model.Requests.SearchRequests;
+using AniRay.Services.Interfaces.BaseInterfaces;
 
 namespace AniRay.Services.Services.BaseServices
 {
-    public abstract class BaseCRUDService<TModel, TSearch, TDbEntity, TInsert, TUpdate>
-        : BaseService<TModel, TSearch, TDbEntity> where TModel : class where TSearch : BaseSearchObject where TDbEntity : class
+    public abstract class BaseCRUDService<TModelUser, TModelEmployee, TSearchUser, TSearchEmployee, TDbEntity, TInsertUser, TInserEmployee, TUpdateUser, TUpdateEmployee>
+        : BaseService<TModelUser, TModelEmployee, TSearchUser, TSearchEmployee, TDbEntity>, 
+        ICRUDService<TModelUser, TModelEmployee, TSearchUser, TSearchEmployee, TInsertUser, TInserEmployee, TUpdateUser, TUpdateEmployee>
+        where TModelUser : class
+        where TModelEmployee : class
+        where TSearchUser : BaseSearchObject
+        where TSearchEmployee : BaseSearchObject
+        where TDbEntity : class
     {
         public BaseCRUDService(AniRayDbContext context, IMapper mapper) : base(context, mapper)
         {
         }
 
-        #region Insert
-        public virtual ServiceResult<bool> BeforeInsert(TInsert request, TDbEntity entity)
-        {
-            return ServiceResult<bool>.Ok(true);
-        }
-        public virtual ServiceResult<TModel> Insert(TInsert request)
+        public virtual ServiceResult<TModelUser> Insert(TInsertUser request)
         {
             TDbEntity entity = Mapper.Map<TDbEntity>(request);
 
             var validationResult = BeforeInsert(request, entity);
             if (!validationResult.Success)
-                return ServiceResult<TModel>.Fail(validationResult.Message!);
+                return ServiceResult<TModelUser>.Fail(validationResult.Message!);
 
             Context.Add(entity);
             Context.SaveChanges();
 
-            return ServiceResult<TModel>.Ok(Mapper.Map<TModel>(entity));
+            return ServiceResult<TModelUser>.Ok(Mapper.Map<TModelUser>(entity));
         }
-        #endregion
-
-        #region Update
-        public virtual ServiceResult<bool> BeforeUpdate(TUpdate request, TDbEntity entity)
+        public virtual ServiceResult<bool> BeforeInsert(TInsertUser request, TDbEntity entity)
         {
             return ServiceResult<bool>.Ok(true);
         }
-        public virtual ServiceResult<TModel> Update(int id, TUpdate request)
+
+        public virtual ServiceResult<TModelEmployee> InsertEmployee(TInserEmployee request)
+        {
+            TDbEntity entity = Mapper.Map<TDbEntity>(request);
+
+            var validationResult = BeforeInsertEmployee(request, entity);
+            if (!validationResult.Success)
+                return ServiceResult<TModelEmployee>.Fail(validationResult.Message!);
+
+            Context.Add(entity);
+            Context.SaveChanges();
+
+            return ServiceResult<TModelEmployee>.Ok(Mapper.Map<TModelEmployee>(entity));
+        }
+        public virtual ServiceResult<bool> BeforeInsertEmployee(TInserEmployee request, TDbEntity entity)
+        {
+            return ServiceResult<bool>.Ok(true);
+        }
+        
+        public virtual ServiceResult<TModelUser> Update(int id, TUpdateUser request)
         {
             var set = Context.Set<TDbEntity>();
             var entity = set.Find(id);
 
             if (entity == null)
-                return ServiceResult<TModel>.Fail("Entity not found.");
+                return ServiceResult<TModelUser>.Fail("Entity not found.");
 
             Mapper.Map(request, entity);
 
             var validationResult = BeforeUpdate(request, entity);
             if (!validationResult.Success)
-                return ServiceResult<TModel>.Fail(validationResult.Message!);
+                return ServiceResult<TModelUser>.Fail(validationResult.Message!);
 
             Context.SaveChanges();
 
-            return ServiceResult<TModel>.Ok(Mapper.Map<TModel>(entity));
+            return ServiceResult<TModelUser>.Ok(Mapper.Map<TModelUser>(entity));
         }
-        #endregion
+        public virtual ServiceResult<bool> BeforeUpdate(TUpdateUser request, TDbEntity entity)
+        {
+            return ServiceResult<bool>.Ok(true);
+        }
 
-        #region Soft Delete
+        public virtual ServiceResult<TModelEmployee> UpdateEmployee(int id, TUpdateEmployee request)
+        {
+            var set = Context.Set<TDbEntity>();
+            var entity = set.Find(id);
+
+            if (entity == null)
+                return ServiceResult<TModelEmployee>.Fail("Entity not found.");
+
+            Mapper.Map(request, entity);
+
+            var validationResult = BeforeUpdateEmployee(request, entity);
+            if (!validationResult.Success)
+                return ServiceResult<TModelEmployee>.Fail(validationResult.Message!);
+
+            Context.SaveChanges();
+
+            return ServiceResult<TModelEmployee>.Ok(Mapper.Map<TModelEmployee>(entity));
+        }
+        public virtual ServiceResult<bool> BeforeUpdateEmployee(TUpdateEmployee request, TDbEntity entity)
+        {
+            return ServiceResult<bool>.Ok(true);
+        }
+
         public virtual ServiceResult<string> SoftDelete(int id)
         {
             return ServiceResult<string>.Ok($"This entity cannot be deleted");
         }
-        #endregion
     }
 }

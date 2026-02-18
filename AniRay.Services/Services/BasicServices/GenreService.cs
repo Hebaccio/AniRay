@@ -1,6 +1,6 @@
 ﻿using AniRay.Model.Data;
 using AniRay.Model.Entities;
-using AniRay.Services.Interfaces;
+using AniRay.Services.Interfaces.BasicServices;
 using MapsterMapper;
 using System;
 using System.Collections.Generic;

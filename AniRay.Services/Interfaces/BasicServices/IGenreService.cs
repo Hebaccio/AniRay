@@ -8,9 +8,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace AniRay.Services.Interfaces
+namespace AniRay.Services.Interfaces.BasicServices
 {
-    public interface IUserService : ICRUDService<UserModel, UserSearchObject, UserInsertRequest, UserUpdateRequest>
+    public interface IGenreService : IBasicEntitiesService<Genre>
     {
     }
 }

@@ -6,10 +6,17 @@ using System.Text;
 
 namespace AniRay.Services.Interfaces.BaseInterfaces
 {
-    public interface ICRUDService<TModel, TSearch, TInsert, TUpdate> : IService<TModel, TSearch> where TModel : class where TSearch : BaseSearchObject
+    public interface ICRUDService<TModelUser, TModelEmployee, TSearchUser, TSearchEmployee, TInsertUser, TInsertEmployee, TUpdateUser, TUpdateEmployee> :
+        IService<TModelUser, TModelEmployee, TSearchUser, TSearchEmployee>
+        where TModelUser : class
+        where TModelEmployee : class
+        where TSearchUser : BaseSearchObject
+        where TSearchEmployee : BaseSearchObject
     {
-        ServiceResult<TModel> Insert(TInsert request);
-        ServiceResult<TModel> Update(int id, TUpdate request);
+        ServiceResult<TModelUser> Insert(TInsertUser request);
+        ServiceResult<TModelEmployee> InsertEmployee(TInsertEmployee request);
+        ServiceResult<TModelUser> Update(int id, TUpdateUser request);
+        ServiceResult<TModelEmployee> UpdateEmployee(int id, TUpdateEmployee request);
         ServiceResult<string> SoftDelete(int id);
     }
 }

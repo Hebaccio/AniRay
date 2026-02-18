@@ -9,8 +9,13 @@ using System.Text;
 
 namespace AniRay.Services.Interfaces
 {
-    public interface IMoviesService : ICRUDService<MovieModel, MovieSearchObject, MovieInsertRequest, MovieUpdateRequest>
+    public interface IBasicEntitiesService<TdbEntity> :
+        ICRUDService<
+            BaseClassUserModel, BaseClassEmployeeModel, 
+            BaseClassUserSearchObject, BaseClassEmployeeSearchObject, 
+            BaseClassInsertRequest, BaseClassInsertRequest, 
+            BaseClassUserUpdateRequest, BaseClassEmployeeUpdateRequest>
     {
-    
+
     }
 }

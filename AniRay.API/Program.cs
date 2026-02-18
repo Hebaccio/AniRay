@@ -12,13 +12,11 @@ using Swashbuckle.AspNetCore.SwaggerUI;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using AniRay.Services.Interfaces.BasicServices;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddTransient<IMoviesService, MoviesService>();
-builder.Services.AddTransient<IBluRaysService, BluRayService>();
-builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<IAudioFormatService, AudioFormatService>();
 builder.Services.AddTransient<IGenderService, GenderService>();
 builder.Services.AddTransient<IGenreService, GenreService>();
@@ -26,8 +24,6 @@ builder.Services.AddTransient<IOrderStatusService, OrderStatusService>();
 builder.Services.AddTransient<IUserRoleService, UserRoleService>();
 builder.Services.AddTransient<IUserStatusService, UserStatusService>();
 builder.Services.AddTransient<IVideoFormatService, VideoFormatService>();
-builder.Services.AddTransient<IOrderService, OrderService>();
-builder.Services.AddTransient<IUserCartService, UserCartService>();
 builder.Services.AddScoped<IMailService, MailService>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 
@@ -63,7 +59,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Workers",
+        policy => policy.RequireRole("Employee", "Boss"));
+});
+
 #endregion
 
 builder.Services.Configure<EmailSettings>(

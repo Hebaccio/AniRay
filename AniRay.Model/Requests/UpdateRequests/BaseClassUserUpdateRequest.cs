@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 
-namespace AniRay.Model.Requests.InsertRequests
+namespace AniRay.Model.Requests.UpdateRequests
 {
-    public class BasicClassInsertRequest
+    public class BaseClassUserUpdateRequest
     {
         [Required(ErrorMessage = "You must provide a name")]
         public string Name { get; set; }

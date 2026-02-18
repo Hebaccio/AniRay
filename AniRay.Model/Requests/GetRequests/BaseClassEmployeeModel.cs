@@ -1,15 +1,16 @@
-﻿using AniRay.Model.Entities;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace AniRay.Model.Requests.GetRequests
 {
-    public class MovieGenresModel
+    public class BaseClassEmployeeModel
     {
         public int Id { get; set; }
-        public virtual Genre Genre { get; set; } = null!;
+        public string Name { get; set; }
+        public bool IsDeleted { get; set; }
     }
 }

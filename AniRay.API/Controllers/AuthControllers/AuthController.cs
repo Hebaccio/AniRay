@@ -30,18 +30,18 @@ namespace AniRay.API.Controllers.EntityControllers
         private readonly AniRayDbContext _context;
         private readonly IConfiguration _config;
         private readonly IMailService _mailService;
-        private readonly IUserService _userService;
+        //private readonly iuserservice _userService;
 
-        public AuthController(ITokenService tokenService, AniRayDbContext context, IConfiguration config, IMailService mailService, IUserService userService)
+        public AuthController(ITokenService tokenService, AniRayDbContext context, IConfiguration config, IMailService mailService)//, IUserService userService)
         {
             _tokenService = tokenService;
             _context = context;
             _config = config;
             _mailService = mailService;
-            _userService = userService;
+            //_userService = userService;
         }
 
-        [HttpPost("Register")]
+        /*[HttpPost("Register")]
         public async Task<IActionResult> Register([FromBody] UserInsertRequest request)
         {
             if (!ModelState.IsValid)
@@ -217,6 +217,6 @@ namespace AniRay.API.Controllers.EntityControllers
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
+        }*/
     }
 }

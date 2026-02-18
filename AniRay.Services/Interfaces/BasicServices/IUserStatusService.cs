@@ -1,4 +1,5 @@
-﻿using AniRay.Model.Requests.GetRequests;
+﻿using AniRay.Model.Entities;
+using AniRay.Model.Requests.GetRequests;
 using AniRay.Model.Requests.InsertRequests;
 using AniRay.Model.Requests.SearchRequests;
 using AniRay.Model.Requests.UpdateRequests;
@@ -7,9 +8,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace AniRay.Services.Interfaces
+namespace AniRay.Services.Interfaces.BasicServices
 {
-    public interface IGenreService : ICRUDService<BasicClassModel, BasicClassSearchObject, BasicClassInsertRequest, BasicClassUpdateRequest>
+    public interface IUserStatusService : IBasicEntitiesService<UserStatus>
     {
     }
 }

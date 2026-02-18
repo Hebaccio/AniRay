@@ -1,4 +1,5 @@
-﻿using AniRay.Model.Requests.GetRequests;
+﻿using AniRay.Model.Entities;
+using AniRay.Model.Requests.GetRequests;
 using AniRay.Model.Requests.InsertRequests;
 using AniRay.Model.Requests.SearchRequests;
 using AniRay.Model.Requests.UpdateRequests;
@@ -9,8 +10,7 @@ using System.Text;
 
 namespace AniRay.Services.Interfaces
 {
-    public interface IBluRaysService : ICRUDService<BluRayModel, BluRaySearchObject, BluRayInsertRequest, BluRayUpdateRequest>
+    public interface IVideoFormatService : IBasicEntitiesService<VideoFormat>
     {
-    
     }
 }

@@ -14,56 +14,73 @@ using System.Text;
 namespace AniRay.Services.Services.BasicServices
 {
     public class BasicEntitiesService<TDbEntity> : 
-        BaseCRUDService<BasicClassModel, BasicClassSearchObject, TDbEntity, BasicClassInsertRequest, BasicClassUpdateRequest>
+        BaseCRUDService<
+            BaseClassUserModel, BaseClassEmployeeModel, 
+            BaseClassUserSearchObject, BaseClassEmployeeSearchObject, 
+            TDbEntity, 
+            BaseClassInsertRequest, BaseClassInsertRequest, 
+            BaseClassUserUpdateRequest, BaseClassEmployeeUpdateRequest>
         where TDbEntity : BaseClass
     {
         public BasicEntitiesService(AniRayDbContext context, IMapper mapper) : base(context, mapper)
         {
             
         }
-        #region Get Filters
-        public override IQueryable<TDbEntity> AddFilters(BasicClassSearchObject search, IQueryable<TDbEntity> query)
+
+        public override IQueryable<TDbEntity> AddFilters(BaseClassUserSearchObject search, IQueryable<TDbEntity> query)
         {
-            query = query.Where(x => !x.IsDeleted);
+            base.AddFilters(search, query);
+
+            query = query.Where(b=> !b.IsDeleted);
+
+            return query;
+        }
+        public override IQueryable<TDbEntity> AddFiltersEmployees(BaseClassEmployeeSearchObject search, IQueryable<TDbEntity> query)
+        {
+            base.AddFiltersEmployees(search, query);
+
+            if (string.IsNullOrEmpty(search.NameFTS))
+                query = query.Where(b => b.Name.Contains(search.NameFTS));
+            if(search.IsDeleted!=null)
+                query = query.Where(b=> b.IsDeleted ==  search.IsDeleted);
+
             return query;
         }
         public override IQueryable<TDbEntity> AddGetByIdFilters(IQueryable<TDbEntity> query)
         {
             return query.Where(x => !x.IsDeleted);
         }
-        #endregion
-
-        #region Insert
-        public override ServiceResult<bool> BeforeInsert(BasicClassInsertRequest request, TDbEntity entity)
+        public override IQueryable<TDbEntity> AddGetByIdFiltersEmployees(IQueryable<TDbEntity> query)
         {
-            bool exists = Context.Set<TDbEntity>()
-                .Any(x => x.Name == request.Name);
+            return query.Where(x => !x.IsDeleted);
+        }
 
+        public override ServiceResult<bool> BeforeInsertEmployee(BaseClassInsertRequest request, TDbEntity entity)
+        {
+            base.BeforeInsertEmployee(request, entity);
+
+            bool exists = Context.Set<TDbEntity>().Any(x => x.Name == request.Name);
             if (exists)
-                return ServiceResult<bool>.Fail("Name already exists.");
+                return ServiceResult<bool>.Fail($"Name already exists on one {typeof(TDbEntity)} record");
 
             return ServiceResult<bool>.Ok(true);
         }
-        #endregion
-
-        #region Update
-        public override ServiceResult<bool> BeforeUpdate(BasicClassUpdateRequest request, TDbEntity entity)
+        public override ServiceResult<bool> BeforeUpdateEmployee(BaseClassEmployeeUpdateRequest request, TDbEntity entity)
         {
-            bool exists = Context.Set<TDbEntity>()
-                .Any(x => x.Name == request.Name
-                       && x.Id != entity.Id
-                       && !x.IsDeleted);
+            base.BeforeUpdateEmployee(request, entity);
+
+            bool exists = Context.Set<TDbEntity>().Any(x => x.Name == request.Name && x.Id != entity.Id && !x.IsDeleted);
 
             if (exists)
-                return ServiceResult<bool>.Fail("Name already exists.");
+                return ServiceResult<bool>.Fail($"Name already exists on anohter {typeof(TDbEntity)} record");
 
             return ServiceResult<bool>.Ok(true);
         }
-        #endregion
 
-        #region Soft Delete
         public override ServiceResult<string> SoftDelete(int id)
         {
+            base.SoftDelete(id);
+
             var entity = Context.Set<TDbEntity>().Find(id);
 
             if (entity == null || entity.IsDeleted)
@@ -74,6 +91,5 @@ namespace AniRay.Services.Services.BasicServices
 
             return ServiceResult<string>.Ok("Deleted successfully.");
         }
-        #endregion
     }
 }
