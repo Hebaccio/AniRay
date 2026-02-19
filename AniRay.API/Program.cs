@@ -26,6 +26,9 @@ builder.Services.AddTransient<IUserStatusService, UserStatusService>();
 builder.Services.AddTransient<IVideoFormatService, VideoFormatService>();
 builder.Services.AddScoped<IMailService, MailService>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
+builder.Services.AddScoped<IBluRayService, BluRayService>();
+builder.Services.AddScoped<IMovieService, MovieService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 
 
@@ -66,6 +69,8 @@ builder.Services.AddAuthorization(options =>
 });
 
 #endregion
+
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.Configure<EmailSettings>(
     builder.Configuration.GetSection("EmailSettings"));

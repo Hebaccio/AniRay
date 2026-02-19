@@ -15,11 +15,11 @@ namespace AniRay.Services.Services.BasicServices
 {
     public class BasicEntitiesService<TDbEntity> : 
         BaseCRUDService<
-            BaseClassUserModel, BaseClassEmployeeModel, 
-            BaseClassUserSearchObject, BaseClassEmployeeSearchObject, 
+            BaseClassUM, BaseClassEM, 
+            BaseClassUSO, BaseClassESO, 
             TDbEntity, 
-            BaseClassInsertRequest, BaseClassInsertRequest, 
-            BaseClassUserUpdateRequest, BaseClassEmployeeUpdateRequest>
+            BaseClassIR, BaseClassIR, 
+            BaseClassUUR, BaseClassEUR>
         where TDbEntity : BaseClass
     {
         public BasicEntitiesService(AniRayDbContext context, IMapper mapper) : base(context, mapper)
@@ -27,7 +27,8 @@ namespace AniRay.Services.Services.BasicServices
             
         }
 
-        public override IQueryable<TDbEntity> AddFilters(BaseClassUserSearchObject search, IQueryable<TDbEntity> query)
+        #region Get Filters
+        public override IQueryable<TDbEntity> AddFilters(BaseClassUSO search, IQueryable<TDbEntity> query)
         {
             base.AddFilters(search, query);
 
@@ -35,7 +36,7 @@ namespace AniRay.Services.Services.BasicServices
 
             return query;
         }
-        public override IQueryable<TDbEntity> AddFiltersEmployees(BaseClassEmployeeSearchObject search, IQueryable<TDbEntity> query)
+        public override IQueryable<TDbEntity> AddFiltersEmployees(BaseClassESO search, IQueryable<TDbEntity> query)
         {
             base.AddFiltersEmployees(search, query);
 
@@ -54,8 +55,10 @@ namespace AniRay.Services.Services.BasicServices
         {
             return query.Where(x => !x.IsDeleted);
         }
+        #endregion
 
-        public override ServiceResult<bool> BeforeInsertEmployee(BaseClassInsertRequest request, TDbEntity entity)
+        #region Insert
+        public override ServiceResult<bool> BeforeInsertEmployee(BaseClassIR request, TDbEntity entity)
         {
             base.BeforeInsertEmployee(request, entity);
 
@@ -65,7 +68,10 @@ namespace AniRay.Services.Services.BasicServices
 
             return ServiceResult<bool>.Ok(true);
         }
-        public override ServiceResult<bool> BeforeUpdateEmployee(BaseClassEmployeeUpdateRequest request, TDbEntity entity)
+        #endregion
+
+        #region Update
+        public override ServiceResult<bool> BeforeUpdateEmployee(BaseClassEUR request, TDbEntity entity)
         {
             base.BeforeUpdateEmployee(request, entity);
 
@@ -76,7 +82,9 @@ namespace AniRay.Services.Services.BasicServices
 
             return ServiceResult<bool>.Ok(true);
         }
+        #endregion
 
+        #region Soft Delete
         public override ServiceResult<string> SoftDelete(int id)
         {
             base.SoftDelete(id);
@@ -91,5 +99,6 @@ namespace AniRay.Services.Services.BasicServices
 
             return ServiceResult<string>.Ok("Deleted successfully.");
         }
+        #endregion
     }
 }

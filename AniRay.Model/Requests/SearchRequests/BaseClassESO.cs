@@ -5,8 +5,9 @@ using System.Text;
 
 namespace AniRay.Model.Requests.SearchRequests
 {
-    public class BaseClassUserSearchObject : BaseSearchObject
+    public class BaseClassESO : BaseSO
     {
-        
+        public string? NameFTS { get; set; }
+        public bool? IsDeleted { get; set; }
     }
 }

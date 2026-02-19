@@ -5,17 +5,14 @@ using AniRay.Model.Requests.UpdateRequests;
 using AniRay.Services.Interfaces.BaseInterfaces;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace AniRay.Services.Interfaces
 {
-    public interface IBasicEntitiesService<TdbEntity> :
-        ICRUDService<
-            BaseClassUM, BaseClassEM, 
-            BaseClassUSO, BaseClassESO, 
-            BaseClassIR, BaseClassIR, 
-            BaseClassUUR, BaseClassEUR>
+    public interface IUserService :
+        ICRUDService<UserUM, UserEM, UserESO, UserESO, UserIR, UserIR, UserUUR, UserEUR>
     {
-
     }
 }

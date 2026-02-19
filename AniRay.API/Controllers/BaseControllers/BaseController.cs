@@ -7,8 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace AniRay.API.Controllers.BaseControllers
 {
     public class BaseController<TModelUser, TModelEmployee, TSearchUser, TSearchEmployee> : ControllerBase 
-        where TSearchUser : BaseSearchObject
-        where TSearchEmployee : BaseSearchObject
+        where TSearchUser : BaseSO
+        where TSearchEmployee : BaseSO
     {
 
         protected IService<TModelUser, TModelEmployee, TSearchUser, TSearchEmployee> _service;

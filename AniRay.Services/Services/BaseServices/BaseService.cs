@@ -19,8 +19,8 @@ namespace AniRay.Services.Services.BaseServices
         IService<TModelUser, TModelEmployee, TSearchUser, TSearchEmployee>
         where TModelUser : class
         where TModelEmployee : class
-        where TSearchUser : BaseSearchObject
-        where TSearchEmployee : BaseSearchObject
+        where TSearchUser : BaseSO
+        where TSearchEmployee : BaseSO
         where TDbEntity : class 
     {
         public AniRayDbContext Context { get; set; }
@@ -31,7 +31,7 @@ namespace AniRay.Services.Services.BaseServices
             Mapper = mapper;
         }
 
-        public PagedResult<TModelUser> GetPaged(TSearchUser search)
+        public virtual PagedResult<TModelUser> GetPaged(TSearchUser search)
         {
             search.Page = Math.Max(search.Page, 0);
             search.PageSize = Math.Clamp(search.PageSize, 0, 50);
@@ -58,7 +58,7 @@ namespace AniRay.Services.Services.BaseServices
             return query;
         }
 
-        public TModelUser GetById(int id)
+        public virtual TModelUser GetById(int id)
         {
             IQueryable<TDbEntity> query = Context.Set<TDbEntity>().AsQueryable();
             query = AddGetByIdFilters(query);
@@ -76,7 +76,7 @@ namespace AniRay.Services.Services.BaseServices
             return query;
         }
 
-        public PagedResult<TModelEmployee> GetPagedEmployees(TSearchEmployee search)
+        public virtual PagedResult<TModelEmployee> GetPagedEmployees(TSearchEmployee search)
         {
             search.Page = Math.Max(search.Page, 0);
             search.PageSize = Math.Clamp(search.PageSize, 0, 50);
@@ -103,7 +103,7 @@ namespace AniRay.Services.Services.BaseServices
             return query;
         }
 
-        public TModelEmployee GetByIdEmployees(int id)
+        public virtual TModelEmployee GetByIdEmployees(int id)
         {
             IQueryable<TDbEntity> query = Context.Set<TDbEntity>().AsQueryable();
             query = AddGetByIdFiltersEmployees(query);

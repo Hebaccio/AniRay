@@ -10,8 +10,8 @@ namespace AniRay.API.Controllers.BaseControllers
         BaseController<TModelUser, TModelEmployee, TSearchUser, TSearchEmployee>
         where TModelUser : class
         where TModelEmployee : class
-        where TSearchUser : BaseSearchObject
-        where TSearchEmployee : BaseSearchObject
+        where TSearchUser : BaseSO
+        where TSearchEmployee : BaseSO
         where TDbEntity : class
     {
         protected new ICRUDService<TModelUser, TModelEmployee, TSearchUser, TSearchEmployee, TInsertUser, TInsertEmployee, TUpdateUser, TUpdateEmployee> _service;

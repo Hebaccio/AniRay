@@ -5,7 +5,7 @@ using System.Text;
 
 namespace AniRay.Model.Requests.UpdateRequests
 {
-    public class BaseClassEmployeeUpdateRequest
+    public class BaseClassEUR
     {
         [Required(ErrorMessage = "You must provide a name")]
         public string Name { get; set; }

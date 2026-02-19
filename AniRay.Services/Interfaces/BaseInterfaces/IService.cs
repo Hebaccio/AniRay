@@ -7,8 +7,8 @@ using System.Text;
 namespace AniRay.Services.Interfaces.BaseInterfaces
 {
     public interface IService<TModelUser, TModelEmployee, TSearchUser, TSearchEmployee>
-        where TSearchUser : BaseSearchObject
-        where TSearchEmployee : BaseSearchObject
+        where TSearchUser : BaseSO
+        where TSearchEmployee : BaseSO
     {
         public PagedResult<TModelEmployee> GetPagedEmployees(TSearchEmployee search);
         public TModelEmployee GetByIdEmployees(int id);

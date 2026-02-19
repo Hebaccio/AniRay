@@ -14,8 +14,8 @@ namespace AniRay.Services.Services.BaseServices
         ICRUDService<TModelUser, TModelEmployee, TSearchUser, TSearchEmployee, TInsertUser, TInserEmployee, TUpdateUser, TUpdateEmployee>
         where TModelUser : class
         where TModelEmployee : class
-        where TSearchUser : BaseSearchObject
-        where TSearchEmployee : BaseSearchObject
+        where TSearchUser : BaseSO
+        where TSearchEmployee : BaseSO
         where TDbEntity : class
     {
         public BaseCRUDService(AniRayDbContext context, IMapper mapper) : base(context, mapper)

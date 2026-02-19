@@ -10,48 +10,48 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AniRay.API.Controllers.EntityControllers
+namespace AniRay.API.Controllers.BasicEntityControllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class GenderController : BaseCRUDController<BaseClassUserModel, BaseClassEmployeeModel, BaseClassUserSearchObject, BaseClassEmployeeSearchObject, AudioFormat,
-        BaseClassInsertRequest, BaseClassInsertRequest, BaseClassUserUpdateRequest, BaseClassEmployeeUpdateRequest>
+    public class GenreController : BaseCRUDController<BaseClassUM, BaseClassEM, BaseClassUSO, BaseClassESO, AudioFormat,
+        BaseClassIR, BaseClassIR, BaseClassUUR, BaseClassEUR>
     {
-        public GenderController(IGenderService service)
+        public GenreController(IGenreService service)
             : base(service)
         {
         }
 
         [HttpGet("GetPaged/EmployeesOnly")]
-        [NonAction]
-        public override PagedResult<BaseClassEmployeeModel> GetPagedEmployees([FromQuery] BaseClassEmployeeSearchObject searchObject)
+        [Authorize(Policy = "Workers")]
+        public override PagedResult<BaseClassEM> GetPagedEmployees([FromQuery] BaseClassESO searchObject)
         {
             return _service.GetPagedEmployees(searchObject);
         }
 
         [HttpGet("GetById/EmployeesOnly/{id}")]
-        [NonAction]
-        public override BaseClassEmployeeModel GetByIdEmployees(int id)
+        [Authorize(Policy = "Workers")]
+        public override BaseClassEM GetByIdEmployees(int id)
         {
             return _service.GetByIdEmployees(id);
         }
 
         [HttpPost("Insert/EmployeesOnly")]
-        [NonAction]
-        public override ServiceResult<BaseClassEmployeeModel> InsertEmployee(BaseClassInsertRequest request)
+        [Authorize(Policy = "Workers")]
+        public override ServiceResult<BaseClassEM> InsertEmployee(BaseClassIR request)
         {
             return _service.InsertEmployee(request);
         }
 
         [HttpPut("Update/EmployeesOnly/{id}")]
-        [NonAction]
-        public override ServiceResult<BaseClassEmployeeModel> UpdateEmployee(int id, BaseClassEmployeeUpdateRequest request)
+        [Authorize(Policy = "Workers")]
+        public override ServiceResult<BaseClassEM> UpdateEmployee(int id, BaseClassEUR request)
         {
             return _service.UpdateEmployee(id, request);
         }
 
         [HttpDelete("SoftDelete/{id}")]
-        [NonAction]
+        [Authorize(Policy = "Workers")]
         public override ServiceResult<string> SoftDelete(int id)
         {
             return _service.SoftDelete(id);
@@ -59,14 +59,14 @@ namespace AniRay.API.Controllers.EntityControllers
 
         [HttpPost("Insert")]
         [NonAction]
-        public override ServiceResult<BaseClassUserModel> Insert(BaseClassInsertRequest request)
+        public override ServiceResult<BaseClassUM> Insert(BaseClassIR request)
         {
             return _service.Insert(request);
         }
 
         [HttpPut("Update/{id}")]
         [NonAction]
-        public override ServiceResult<BaseClassUserModel> Update(int id, BaseClassUserUpdateRequest request)
+        public override ServiceResult<BaseClassUM> Update(int id, BaseClassUUR request)
         {
             return _service.Update(id, request);
         }

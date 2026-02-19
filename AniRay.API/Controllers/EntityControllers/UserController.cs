@@ -6,47 +6,47 @@ using AniRay.Model.Requests.GetRequests;
 using AniRay.Model.Requests.InsertRequests;
 using AniRay.Model.Requests.SearchRequests;
 using AniRay.Model.Requests.UpdateRequests;
+using AniRay.Services.Interfaces;
 using AniRay.Services.Interfaces.BasicServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AniRay.API.Controllers.EntityControllers
+namespace AniRay.API.Controllers.BasicEntityControllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class AudioFormatController : BaseCRUDController<BaseClassUserModel, BaseClassEmployeeModel, BaseClassUserSearchObject, BaseClassEmployeeSearchObject, AudioFormat, 
-        BaseClassInsertRequest, BaseClassInsertRequest, BaseClassUserUpdateRequest, BaseClassEmployeeUpdateRequest>
+    public class UserController : BaseCRUDController<UserUM, UserEM, UserESO, UserESO, User, UserIR, UserIR, UserUUR, UserEUR>
     {
-        public AudioFormatController(IAudioFormatService service)
+        public UserController(IUserService service)
             : base(service)
         {
         }
 
-        [HttpGet("GetPaged/EmployeesOnly")]
+        /*[HttpGet("GetPaged/EmployeesOnly")]
         [Authorize(Policy = "Workers")]
-        public override PagedResult<BaseClassEmployeeModel> GetPagedEmployees([FromQuery] BaseClassEmployeeSearchObject searchObject)
+        public override PagedResult<UserEM> GetPagedEmployees([FromQuery] UserESO searchObject)
         {
             return _service.GetPagedEmployees(searchObject);
         }
 
         [HttpGet("GetById/EmployeesOnly/{id}")]
         [Authorize(Policy = "Workers")]
-        public override BaseClassEmployeeModel GetByIdEmployees(int id)
+        public override UserEM GetByIdEmployees(int id)
         {
             return _service.GetByIdEmployees(id);
         }
 
         [HttpPost("Insert/EmployeesOnly")]
         [Authorize(Policy = "Workers")]
-        public override ServiceResult<BaseClassEmployeeModel> InsertEmployee(BaseClassInsertRequest request)
+        public override ServiceResult<UserEM> InsertEmployee(UserIR request)
         {
             return _service.InsertEmployee(request);
         }
 
         [HttpPut("Update/EmployeesOnly/{id}")]
         [Authorize(Policy = "Workers")]
-        public override ServiceResult<BaseClassEmployeeModel> UpdateEmployee(int id, BaseClassEmployeeUpdateRequest request)
+        public override ServiceResult<UserEM> UpdateEmployee(int id, UserEUR request)
         {
             return _service.UpdateEmployee(id, request);
         }
@@ -58,18 +58,25 @@ namespace AniRay.API.Controllers.EntityControllers
             return _service.SoftDelete(id);
         }
 
+        [HttpPut("Update/{id}")]
+        [Authorize (Roles = "User")]
+        public override ServiceResult<UserUM> Update(int id, UserUUR request)
+        {
+            return _service.Update(id, request);
+        }
+        
         [HttpPost("Insert")]
         [NonAction]
-        public override ServiceResult<BaseClassUserModel> Insert(BaseClassInsertRequest request)
+        public override ServiceResult<UserUM> Insert(UserIR request)
         {
             return _service.Insert(request);
         }
 
-        [HttpPut("Update/{id}")]
+        [HttpGet("GetPaged")]
         [NonAction]
-        public override ServiceResult<BaseClassUserModel> Update(int id, BaseClassUserUpdateRequest request)
+        public override PagedResult<UserUM> GetPaged([FromQuery] UserESO searchObject)
         {
-            return _service.Update(id, request);
-        }
+            return base.GetPaged(searchObject);
+        }*/
     }
 }

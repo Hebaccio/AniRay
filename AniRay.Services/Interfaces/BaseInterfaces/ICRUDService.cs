@@ -10,8 +10,8 @@ namespace AniRay.Services.Interfaces.BaseInterfaces
         IService<TModelUser, TModelEmployee, TSearchUser, TSearchEmployee>
         where TModelUser : class
         where TModelEmployee : class
-        where TSearchUser : BaseSearchObject
-        where TSearchEmployee : BaseSearchObject
+        where TSearchUser : BaseSO
+        where TSearchEmployee : BaseSO
     {
         ServiceResult<TModelUser> Insert(TInsertUser request);
         ServiceResult<TModelEmployee> InsertEmployee(TInsertEmployee request);
