@@ -9,30 +9,39 @@ using AniRay.Services.Helpers;
 using AniRay.Services.Interfaces;
 using AniRay.Services.Services.BaseServices;
 using MapsterMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq.Dynamic.Core;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
-using System.Security.Claims; // for ClaimTypes
-using Microsoft.AspNetCore.Http;
-using System.IdentityModel.Tokens.Jwt;
+using static AniRay.Services.Helpers.CoreData;
 
 namespace AniRay.Services.Services
 {
     public class UserService : 
         BaseCRUDService<UserUM, UserEM, UserESO, UserESO, User,UserIR, UserIR, UserUUR, UserEUR>, IUserService
     {
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public UserService(AniRayDbContext context, IMapper mapper) : base(context, mapper)
+        public UserService(AniRayDbContext context, IMapper mapper, IHttpContextAccessor httpContextAccessor) : base(context, mapper)
         {
+            _httpContextAccessor = httpContextAccessor;
         }
 
         //Add methods for: Add Employee, Add Boss, Update Employee/Boss (Boss only)
 
+        private int? GetCurrentUserId()
+        {
+            var claim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier);
+
+            return claim != null && int.TryParse(claim.Value, out int id) ? id : null;
+        }
+
         #region Get Filters
-        
         public override IQueryable<User> AddFiltersEmployees(UserESO search, IQueryable<User> query)
         {
             base.AddFiltersEmployees(search, query);
@@ -100,6 +109,18 @@ namespace AniRay.Services.Services
 
             return query;
         }
+        public override UserUM GetById(int id)
+        {
+            var currentUserId = GetCurrentUserId();
+
+            if (currentUserId == null)
+                return null;
+
+            if (currentUserId != id)
+                return null;
+
+            return base.GetById(id);
+        }
         #endregion
 
         #region Insert
@@ -134,8 +155,8 @@ namespace AniRay.Services.Services
             entity.PasswordSalt = salt;
 
             entity.CreatedAt = DateTime.UtcNow;
-            entity.UserStatusId = (int)CoreData.CoreUserStatus.Active;
-            entity.UserRoleId = (int)CoreData.CoreUserRole.User;
+            entity.UserStatusId = (int)CoreUserStatus.Active;
+            entity.UserRoleId = (int)CoreUserRole.User;
 
             return ServiceResult<bool>.Ok(true);
         }
@@ -149,8 +170,12 @@ namespace AniRay.Services.Services
             if (request == null)
                 return ServiceResult<bool>.Fail("Request cannot be null.");
 
-            if (entity == null || entity.UserStatusId != 1)
-                return ServiceResult<bool>.Fail("User does not exist.");
+            if (entity == null || entity.UserStatusId != (int)CoreData.CoreUserStatus.Active)
+                return ServiceResult<bool>.Fail($"Action unavailable because the user is Suspended or Deleted");
+
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == null || currentUserId != entity.Id)
+                return ServiceResult<bool>.Fail("You can only update your own profile.");
 
             var nullCheck = BeforeUpdateNullCheck(request);
             if (!nullCheck.Success)
@@ -173,7 +198,6 @@ namespace AniRay.Services.Services
 
             return ServiceResult<bool>.Ok(true);
         }
-        //Make sure he can only do this to users
         public override ServiceResult<bool> BeforeUpdateEmployee(UserEUR request, User entity)
         {
             base.BeforeUpdateEmployee(request, entity);
@@ -181,8 +205,11 @@ namespace AniRay.Services.Services
             if (request == null)
                 return ServiceResult<bool>.Fail("Request cannot be null.");
 
-            if (entity == null || entity.UserStatusId != 1)
-                return ServiceResult<bool>.Fail("User does not exist.");
+            Context.Entry(entity).Reference(u => u.UserRole).Load();
+            Context.Entry(entity).Reference(u => u.UserStatus).Load();
+
+            if (entity.UserRole.Name != CoreUserRole.User.ToString())
+                return ServiceResult<bool>.Fail("Unauthorized to do this");
 
             var nullCheck = BeforeUpdateEmployeesNullCheck(request);
             if (!nullCheck.Success)
@@ -353,16 +380,23 @@ namespace AniRay.Services.Services
         #region Soft Delete
         public override ServiceResult<string> SoftDelete(int id)
         {
-            base.SoftDelete(id);
+            var currentUserId = GetCurrentUserId();
+
+            if (currentUserId == null)
+                return ServiceResult<string>.Fail("User not authenticated.");
+
+            if (currentUserId != id)
+                return ServiceResult<string>.Fail("You can only delete your own profile.");
 
             var entity = Context.Set<User>().Find(id);
             if (entity == null)
-                return ServiceResult<string>.Fail($"User is not found in the database");
+                return ServiceResult<string>.Fail("User not found in the database.");
 
-            entity.UserStatusId = (int)CoreData.CoreUserStatus.Deleted;
+            entity.UserStatusId = (int)CoreUserStatus.Deleted;
+
             Context.SaveChanges();
 
-            return ServiceResult<string>.Ok($"User {entity.Name} {entity.LastName}, is succesfully deleted");
+            return ServiceResult<string>.Ok($"User {entity.Name} {entity.LastName} is successfully deleted.");
         }
         #endregion
     }

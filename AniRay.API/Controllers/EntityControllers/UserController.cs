@@ -11,6 +11,8 @@ using AniRay.Services.Interfaces.BasicServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace AniRay.API.Controllers.BasicEntityControllers
 {
@@ -23,7 +25,7 @@ namespace AniRay.API.Controllers.BasicEntityControllers
         {
         }
 
-        /*[HttpGet("GetPaged/EmployeesOnly")]
+        [HttpGet("GetPaged/EmployeesOnly")]
         [Authorize(Policy = "Workers")]
         public override PagedResult<UserEM> GetPagedEmployees([FromQuery] UserESO searchObject)
         {
@@ -37,13 +39,6 @@ namespace AniRay.API.Controllers.BasicEntityControllers
             return _service.GetByIdEmployees(id);
         }
 
-        [HttpPost("Insert/EmployeesOnly")]
-        [Authorize(Policy = "Workers")]
-        public override ServiceResult<UserEM> InsertEmployee(UserIR request)
-        {
-            return _service.InsertEmployee(request);
-        }
-
         [HttpPut("Update/EmployeesOnly/{id}")]
         [Authorize(Policy = "Workers")]
         public override ServiceResult<UserEM> UpdateEmployee(int id, UserEUR request)
@@ -52,19 +47,34 @@ namespace AniRay.API.Controllers.BasicEntityControllers
         }
 
         [HttpDelete("SoftDelete/{id}")]
-        [Authorize(Policy = "Workers")]
+        [Authorize(Roles = "User")]
         public override ServiceResult<string> SoftDelete(int id)
         {
             return _service.SoftDelete(id);
         }
 
         [HttpPut("Update/{id}")]
-        [Authorize (Roles = "User")]
+        [Authorize(Roles = "User")]
         public override ServiceResult<UserUM> Update(int id, UserUUR request)
         {
             return _service.Update(id, request);
         }
-        
+
+
+        [HttpGet("GetById/{id}")]
+        [Authorize(Roles = "User")]
+        public override UserUM GetById(int id)
+        {
+            return base.GetById(id);
+        }
+
+        [HttpPost("Insert/EmployeesOnly")]
+        [NonAction]
+        public override ServiceResult<UserEM> InsertEmployee(UserIR request)
+        {
+            return _service.InsertEmployee(request);
+        }
+
         [HttpPost("Insert")]
         [NonAction]
         public override ServiceResult<UserUM> Insert(UserIR request)
@@ -77,6 +87,6 @@ namespace AniRay.API.Controllers.BasicEntityControllers
         public override PagedResult<UserUM> GetPaged([FromQuery] UserESO searchObject)
         {
             return base.GetPaged(searchObject);
-        }*/
+        }
     }
 }
