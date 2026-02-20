@@ -47,7 +47,7 @@ namespace AniRay.API.Controllers.EntityControllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var result = _userService.Insert(request);
+            var result = _userService.InsertEntityForUsers(request);
 
             if (!result.Success)
                 return BadRequest(result.Message);

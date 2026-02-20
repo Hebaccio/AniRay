@@ -22,7 +22,7 @@ namespace AniRay.Services.Services.BaseServices
         {
         }
 
-        public virtual ServiceResult<TModelUser> Insert(TInsertUser request)
+        public virtual ServiceResult<TModelUser> InsertEntityForUsers(TInsertUser request)
         {
             TDbEntity entity = Mapper.Map<TDbEntity>(request);
 
@@ -40,7 +40,7 @@ namespace AniRay.Services.Services.BaseServices
             return ServiceResult<bool>.Ok(true);
         }
 
-        public virtual ServiceResult<TModelEmployee> InsertEmployee(TInserEmployee request)
+        public virtual ServiceResult<TModelEmployee> InsertEntityForEmployees(TInserEmployee request)
         {
             TDbEntity entity = Mapper.Map<TDbEntity>(request);
 
@@ -58,7 +58,7 @@ namespace AniRay.Services.Services.BaseServices
             return ServiceResult<bool>.Ok(true);
         }
         
-        public virtual ServiceResult<TModelUser> Update(int id, TUpdateUser request)
+        public virtual ServiceResult<TModelUser> UpdateEntityForUsers(int id, TUpdateUser request)
         {
             var set = Context.Set<TDbEntity>();
             var entity = set.Find(id);
@@ -81,7 +81,7 @@ namespace AniRay.Services.Services.BaseServices
             return ServiceResult<bool>.Ok(true);
         }
 
-        public virtual ServiceResult<TModelEmployee> UpdateEmployee(int id, TUpdateEmployee request)
+        public virtual ServiceResult<TModelEmployee> UpdateEntityForEmployees(int id, TUpdateEmployee request)
         {
             var set = Context.Set<TDbEntity>();
             var entity = set.Find(id);

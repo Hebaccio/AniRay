@@ -10,9 +10,9 @@ namespace AniRay.Services.Interfaces.BaseInterfaces
         where TSearchUser : BaseSO
         where TSearchEmployee : BaseSO
     {
-        public PagedResult<TModelEmployee> GetPagedEmployees(TSearchEmployee search);
-        public TModelEmployee GetByIdEmployees(int id);
-        public PagedResult<TModelUser> GetPaged(TSearchUser search);
-        public TModelUser GetById(int id);
+        public PagedResult<TModelEmployee> GetPagedEntitiesForEmployees(TSearchEmployee search);
+        public TModelEmployee EntityGetByIdForEmployees(int id);
+        public PagedResult<TModelUser> GetPagedEntityForUsers(TSearchUser search);
+        public TModelUser EntityGetByIdForUsers(int id);
     }
 }

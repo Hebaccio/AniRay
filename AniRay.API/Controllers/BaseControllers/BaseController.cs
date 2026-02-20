@@ -18,28 +18,28 @@ namespace AniRay.API.Controllers.BaseControllers
             _service = service;
         }
 
-        [HttpGet("GetPaged/EmployeesOnly")]
+        [HttpGet("GetPagedEntityForUsers/EmployeesOnly")]
         public virtual PagedResult<TModelEmployee> GetPagedEmployees([FromQuery] TSearchEmployee searchObject)
         {
-            return _service.GetPagedEmployees(searchObject);
+            return _service.GetPagedEntitiesForEmployees(searchObject);
         }
 
-        [HttpGet("GetById/EmployeesOnly/{id}")]
+        [HttpGet("EntityGetByIdForUsers/EmployeesOnly/{id}")]
         public virtual TModelEmployee GetByIdEmployees(int id)
         {
-            return _service.GetByIdEmployees(id);
+            return _service.EntityGetByIdForEmployees(id);
         }
 
-        [HttpGet("GetPaged")]
+        [HttpGet("GetPagedEntityForUsers")]
         public virtual PagedResult<TModelUser> GetPaged([FromQuery] TSearchUser searchObject)
         {
-            return _service.GetPaged(searchObject);
+            return _service.GetPagedEntityForUsers(searchObject);
         }
 
-        [HttpGet("GetById/{id}")]
+        [HttpGet("EntityGetByIdForUsers/{id}")]
         public virtual TModelUser GetById(int id)
         {
-            return _service.GetById(id);
+            return _service.EntityGetByIdForUsers(id);
         }
     }
 }

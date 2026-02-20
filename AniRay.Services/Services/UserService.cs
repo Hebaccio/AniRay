@@ -33,7 +33,7 @@ namespace AniRay.Services.Services
             _currentUser = currentUser;
         }
 
-        //Add methods for: Add Employee, Add Boss, Update Employee/Boss (Boss only)
+        //Add methods for: Add Employee, Add Boss, UpdateEntityForUsers Employee/Boss (Boss only)
 
         #region Get Filters
         public override IQueryable<User> AddFiltersEmployees(UserESO search, IQueryable<User> query)
@@ -106,26 +106,26 @@ namespace AniRay.Services.Services
 
             return query;
         }
-        public override UserUM GetById(int id)
+        public override UserUM EntityGetByIdForUsers(int id)
         {
             if (!_currentUser.IsUser() || !_currentUser.IsSelf(id))
                 return null;
 
-            return base.GetById(id);
+            return base.EntityGetByIdForUsers(id);
         }
-        public override UserEM GetByIdEmployees(int id)
+        public override UserEM EntityGetByIdForEmployees(int id)
         {
             if (!_currentUser.IsWorker())
                 return null;
 
-            return base.GetByIdEmployees(id);
+            return base.EntityGetByIdForEmployees(id);
         }
-        public override Model.PagedResult<UserEM> GetPagedEmployees(UserESO search)
+        public override Model.PagedResult<UserEM> GetPagedEntitiesForEmployees(UserESO search)
         {
             if (!_currentUser.IsWorker())
                 return null;
 
-            return base.GetPagedEmployees(search);
+            return base.GetPagedEntitiesForEmployees(search);
         }
         #endregion
 

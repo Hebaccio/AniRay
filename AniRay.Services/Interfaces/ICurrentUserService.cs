@@ -17,6 +17,5 @@ namespace AniRay.Services.Interfaces
         bool IsWorker();
 
         bool IsSelf(int userId);
-        bool IsSelfOrBoss(int userId);
     }
 }

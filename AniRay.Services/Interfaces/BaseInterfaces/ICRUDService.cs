@@ -13,10 +13,10 @@ namespace AniRay.Services.Interfaces.BaseInterfaces
         where TSearchUser : BaseSO
         where TSearchEmployee : BaseSO
     {
-        ServiceResult<TModelUser> Insert(TInsertUser request);
-        ServiceResult<TModelEmployee> InsertEmployee(TInsertEmployee request);
-        ServiceResult<TModelUser> Update(int id, TUpdateUser request);
-        ServiceResult<TModelEmployee> UpdateEmployee(int id, TUpdateEmployee request);
+        ServiceResult<TModelUser> InsertEntityForUsers(TInsertUser request);
+        ServiceResult<TModelEmployee> InsertEntityForEmployees(TInsertEmployee request);
+        ServiceResult<TModelUser> UpdateEntityForUsers(int id, TUpdateUser request);
+        ServiceResult<TModelEmployee> UpdateEntityForEmployees(int id, TUpdateEmployee request);
         ServiceResult<string> SoftDelete(int id);
     }
 }

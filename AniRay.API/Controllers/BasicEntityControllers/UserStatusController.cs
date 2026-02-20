@@ -22,32 +22,32 @@ namespace AniRay.API.Controllers.BasicEntityControllers
         {
         }
 
-        [HttpGet("GetPaged/EmployeesOnly")]
+        [HttpGet("GetPagedEntityForUsers/EmployeesOnly")]
         [NonAction]
         public override PagedResult<BaseClassEM> GetPagedEmployees([FromQuery] BaseClassESO searchObject)
         {
-            return _service.GetPagedEmployees(searchObject);
+            return _service.GetPagedEntitiesForEmployees(searchObject);
         }
 
-        [HttpGet("GetById/EmployeesOnly/{id}")]
+        [HttpGet("EntityGetByIdForUsers/EmployeesOnly/{id}")]
         [NonAction]
         public override BaseClassEM GetByIdEmployees(int id)
         {
-            return _service.GetByIdEmployees(id);
+            return _service.EntityGetByIdForEmployees(id);
         }
 
-        [HttpPost("Insert/EmployeesOnly")]
+        [HttpPost("InsertEntityForUsers/EmployeesOnly")]
         [NonAction]
         public override ServiceResult<BaseClassEM> InsertEmployee(BaseClassIR request)
         {
-            return _service.InsertEmployee(request);
+            return _service.InsertEntityForEmployees(request);
         }
 
-        [HttpPut("Update/EmployeesOnly/{id}")]
+        [HttpPut("UpdateEntityForUsers/EmployeesOnly/{id}")]
         [NonAction]
         public override ServiceResult<BaseClassEM> UpdateEmployee(int id, BaseClassEUR request)
         {
-            return _service.UpdateEmployee(id, request);
+            return _service.UpdateEntityForEmployees(id, request);
         }
 
         [HttpDelete("SoftDelete/{id}")]
@@ -57,32 +57,32 @@ namespace AniRay.API.Controllers.BasicEntityControllers
             return _service.SoftDelete(id);
         }
 
-        [HttpGet("GetPaged")]
+        [HttpGet("GetPagedEntityForUsers")]
         [Authorize (Policy = "Workers")]
         public override PagedResult<BaseClassUM> GetPaged([FromQuery] BaseClassUSO searchObject)
         {
-            return _service.GetPaged(searchObject);
+            return _service.GetPagedEntityForUsers(searchObject);
         }
 
-        [HttpGet("GetById/{id}")]
+        [HttpGet("EntityGetByIdForUsers/{id}")]
         [NonAction]
         public override BaseClassUM GetById(int id)
         {
-            return _service.GetById(id);
+            return _service.EntityGetByIdForUsers(id);
         }
 
-        [HttpPost("Insert")]
+        [HttpPost("InsertEntityForUsers")]
         [NonAction]
         public override ServiceResult<BaseClassUM> Insert(BaseClassIR request)
         {
-            return _service.Insert(request);
+            return _service.InsertEntityForUsers(request);
         }
 
-        [HttpPut("Update/{id}")]
+        [HttpPut("UpdateEntityForUsers/{id}")]
         [NonAction]
         public override ServiceResult<BaseClassUM> Update(int id, BaseClassUUR request)
         {
-            return _service.Update(id, request);
+            return _service.UpdateEntityForUsers(id, request);
         }
     }
 

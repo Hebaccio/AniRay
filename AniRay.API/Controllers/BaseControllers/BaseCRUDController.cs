@@ -21,28 +21,28 @@ namespace AniRay.API.Controllers.BaseControllers
             _service = service;
         }
 
-        [HttpPost("Insert/EmployeesOnly")]
+        [HttpPost("InsertEntityForUsers/EmployeesOnly")]
         public virtual ServiceResult<TModelEmployee> InsertEmployee(TInsertEmployee request)
         {
-            return _service.InsertEmployee(request);
+            return _service.InsertEntityForEmployees(request);
         }
 
-        [HttpPost("Insert")]
+        [HttpPost("InsertEntityForUsers")]
         public virtual ServiceResult<TModelUser> Insert(TInsertUser request)
         {
-            return _service.Insert(request);
+            return _service.InsertEntityForUsers(request);
         }
 
-        [HttpPut("Update/EmployeesOnly/{id}")]
+        [HttpPut("UpdateEntityForUsers/EmployeesOnly/{id}")]
         public virtual ServiceResult<TModelEmployee> UpdateEmployee(int id, TUpdateEmployee request)
         {
-            return _service.UpdateEmployee(id, request);
+            return _service.UpdateEntityForEmployees(id, request);
         }
 
-        [HttpPut("Update/{id}")]
+        [HttpPut("UpdateEntityForUsers/{id}")]
         public virtual ServiceResult<TModelUser> Update(int id, TUpdateUser request)
         {
-            return _service.Update(id, request);
+            return _service.UpdateEntityForUsers(id, request);
         }
 
         [HttpDelete("SoftDelete/{id}")]

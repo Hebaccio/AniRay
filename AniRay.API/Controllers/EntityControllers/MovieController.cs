@@ -23,32 +23,32 @@ namespace AniRay.API.Controllers.BasicEntityControllers
         {
         }
 
-        [HttpGet("GetPaged/EmployeesOnly")]
+        [HttpGet("GetPagedEntityForUsers/EmployeesOnly")]
         [Authorize(Policy = "Workers")]
         public override PagedResult<MovieEM> GetPagedEmployees([FromQuery] MovieESO searchObject)
         {
-            return _service.GetPagedEmployees(searchObject);
+            return _service.GetPagedEntitiesForEmployees(searchObject);
         }
 
-        [HttpGet("GetById/EmployeesOnly/{id}")]
+        [HttpGet("EntityGetByIdForUsers/EmployeesOnly/{id}")]
         [Authorize(Policy = "Workers")]
         public override MovieEM GetByIdEmployees(int id)
         {
-            return _service.GetByIdEmployees(id);
+            return _service.EntityGetByIdForEmployees(id);
         }
 
-        [HttpPost("Insert/EmployeesOnly")]
+        [HttpPost("InsertEntityForUsers/EmployeesOnly")]
         [Authorize(Policy = "Workers")]
         public override ServiceResult<MovieEM> InsertEmployee(MovieIR request)
         {
-            return _service.InsertEmployee(request);
+            return _service.InsertEntityForEmployees(request);
         }
 
-        [HttpPut("Update/EmployeesOnly/{id}")]
+        [HttpPut("UpdateEntityForUsers/EmployeesOnly/{id}")]
         [Authorize(Policy = "Workers")]
         public override ServiceResult<MovieEM> UpdateEmployee(int id, MovieUR request)
         {
-            return _service.UpdateEmployee(id, request);
+            return _service.UpdateEntityForEmployees(id, request);
         }
 
         [HttpDelete("SoftDelete/{id}")]
@@ -58,18 +58,18 @@ namespace AniRay.API.Controllers.BasicEntityControllers
             return _service.SoftDelete(id);
         }
 
-        [HttpPost("Insert")]
+        [HttpPost("InsertEntityForUsers")]
         [NonAction]
         public override ServiceResult<MovieUM> Insert(MovieIR request)
         {
-            return _service.Insert(request);
+            return _service.InsertEntityForUsers(request);
         }
 
-        [HttpPut("Update/{id}")]
+        [HttpPut("UpdateEntityForUsers/{id}")]
         [NonAction]
         public override ServiceResult<MovieUM> Update(int id, MovieUR request)
         {
-            return _service.Update(id, request);
+            return _service.UpdateEntityForUsers(id, request);
         }
     }
 }
