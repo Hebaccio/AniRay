@@ -25,26 +25,23 @@ namespace AniRay.Services.Services
     public class UserService : 
         BaseCRUDService<UserUM, UserEM, UserESO, UserESO, User,UserIR, UserIR, UserUUR, UserEUR>, IUserService
     {
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ICurrentUserService _currentUser;
+        //private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public UserService(AniRayDbContext context, IMapper mapper, IHttpContextAccessor httpContextAccessor) : base(context, mapper)
+        public UserService(AniRayDbContext context, IMapper mapper, ICurrentUserService currentUser) : base(context, mapper)
         {
-            _httpContextAccessor = httpContextAccessor;
+            _currentUser = currentUser;
         }
 
         //Add methods for: Add Employee, Add Boss, Update Employee/Boss (Boss only)
-
-        private int? GetCurrentUserId()
-        {
-            var claim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier);
-
-            return claim != null && int.TryParse(claim.Value, out int id) ? id : null;
-        }
 
         #region Get Filters
         public override IQueryable<User> AddFiltersEmployees(UserESO search, IQueryable<User> query)
         {
             base.AddFiltersEmployees(search, query);
+
+            if (!_currentUser.IsWorker())
+                return null;
 
             if (!string.IsNullOrEmpty(search.UsernameFTS))
                 query = query.Where(u => u.Username.Contains(search.UsernameFTS));
@@ -111,15 +108,24 @@ namespace AniRay.Services.Services
         }
         public override UserUM GetById(int id)
         {
-            var currentUserId = GetCurrentUserId();
-
-            if (currentUserId == null)
-                return null;
-
-            if (currentUserId != id)
+            if (!_currentUser.IsUser() || !_currentUser.IsSelf(id))
                 return null;
 
             return base.GetById(id);
+        }
+        public override UserEM GetByIdEmployees(int id)
+        {
+            if (!_currentUser.IsWorker())
+                return null;
+
+            return base.GetByIdEmployees(id);
+        }
+        public override Model.PagedResult<UserEM> GetPagedEmployees(UserESO search)
+        {
+            if (!_currentUser.IsWorker())
+                return null;
+
+            return base.GetPagedEmployees(search);
         }
         #endregion
 
@@ -167,15 +173,14 @@ namespace AniRay.Services.Services
         {
             base.BeforeUpdate(request, entity);
 
+            if (!_currentUser.IsUser() || !_currentUser.IsSelf(entity.Id))
+                return ServiceResult<bool>.Fail("Unauthorized action");
+
             if (request == null)
                 return ServiceResult<bool>.Fail("Request cannot be null.");
 
             if (entity == null || entity.UserStatusId != (int)CoreData.CoreUserStatus.Active)
                 return ServiceResult<bool>.Fail($"Action unavailable because the user is Suspended or Deleted");
-
-            var currentUserId = GetCurrentUserId();
-            if (currentUserId == null || currentUserId != entity.Id)
-                return ServiceResult<bool>.Fail("You can only update your own profile.");
 
             var nullCheck = BeforeUpdateNullCheck(request);
             if (!nullCheck.Success)
@@ -208,8 +213,8 @@ namespace AniRay.Services.Services
             Context.Entry(entity).Reference(u => u.UserRole).Load();
             Context.Entry(entity).Reference(u => u.UserStatus).Load();
 
-            if (entity.UserRole.Name != CoreUserRole.User.ToString())
-                return ServiceResult<bool>.Fail("Unauthorized to do this");
+            if (!_currentUser.IsEmployee() || entity.UserRole.Name != CoreUserRole.User.ToString())
+                return ServiceResult<bool>.Fail("Unauthorized action");
 
             var nullCheck = BeforeUpdateEmployeesNullCheck(request);
             if (!nullCheck.Success)
@@ -380,13 +385,8 @@ namespace AniRay.Services.Services
         #region Soft Delete
         public override ServiceResult<string> SoftDelete(int id)
         {
-            var currentUserId = GetCurrentUserId();
-
-            if (currentUserId == null)
-                return ServiceResult<string>.Fail("User not authenticated.");
-
-            if (currentUserId != id)
-                return ServiceResult<string>.Fail("You can only delete your own profile.");
+            if (!_currentUser.IsAuthenticated || !_currentUser.IsUser() || !_currentUser.IsSelf(id))
+                return ServiceResult<string>.Fail("Unauthorized action");
 
             var entity = Context.Set<User>().Find(id);
             if (entity == null)
