@@ -1,6 +1,7 @@
 ﻿using AniRay.API.Controllers.BaseControllers;
 using AniRay.Model;
 using AniRay.Model.Entities;
+using AniRay.Model.Migrations;
 using AniRay.Model.Requests.GetRequests;
 using AniRay.Model.Requests.InsertRequests;
 using AniRay.Model.Requests.SearchRequests;
@@ -15,7 +16,7 @@ namespace AniRay.API.Controllers.BasicEntityControllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class VideoFormatController : BaseCRUDController<BaseClassUM, BaseClassEM, BaseClassUSO, BaseClassESO, AudioFormat,
+    public class VideoFormatController : BaseCRUDController<BaseClassUM, BaseClassEM, BaseClassUSO, BaseClassESO, VideoFormat,
         BaseClassIR, BaseClassIR, BaseClassUUR, BaseClassEUR>
     {
         public VideoFormatController(IVideoFormatService service)
@@ -23,54 +24,23 @@ namespace AniRay.API.Controllers.BasicEntityControllers
         {
         }
 
-        [HttpGet("GetPagedEntityForUsers/EmployeesOnly")]
         [Authorize(Policy = "Workers")]
-        public override PagedResult<BaseClassEM> GetPagedEmployees([FromQuery] BaseClassESO searchObject)
+        public override async Task<ActionResult<string>> SoftDelete(int id, CancellationToken cancellationToken)
         {
-            return _service.GetPagedEntitiesForEmployees(searchObject);
+            return await base.SoftDelete(id, cancellationToken);
         }
 
-        [HttpGet("EntityGetByIdForUsers/EmployeesOnly/{id}")]
-        [Authorize(Policy = "Workers")]
-        public override BaseClassEM GetByIdEmployees(int id)
-        {
-            return _service.EntityGetByIdForEmployees(id);
-        }
-
-        [HttpPost("InsertEntityForUsers/EmployeesOnly")]
-        [Authorize(Policy = "Workers")]
-        public override ServiceResult<BaseClassEM> InsertEmployee(BaseClassIR request)
-        {
-            return _service.InsertEntityForEmployees(request);
-        }
-
-        [HttpPut("UpdateEntityForUsers/EmployeesOnly/{id}")]
-        [Authorize(Policy = "Workers")]
-        public override ServiceResult<BaseClassEM> UpdateEmployee(int id, BaseClassEUR request)
-        {
-            return _service.UpdateEntityForEmployees(id, request);
-        }
-
-        [HttpDelete("SoftDelete/{id}")]
-        [Authorize(Policy = "Workers")]
-        public override ServiceResult<string> SoftDelete(int id)
-        {
-            return _service.SoftDelete(id);
-        }
-
-        [HttpPost("InsertEntityForUsers")]
         [NonAction]
-        public override ServiceResult<BaseClassUM> Insert(BaseClassIR request)
+        public override async Task<ActionResult<BaseClassUM>> InsertEntityForUsers(BaseClassIR request, CancellationToken cancellationToken)
         {
-            return _service.InsertEntityForUsers(request);
+            return await base.InsertEntityForUsers(request, cancellationToken);
         }
 
-        [HttpPut("UpdateEntityForUsers/{id}")]
         [NonAction]
-        public override ServiceResult<BaseClassUM> Update(int id, BaseClassUUR request)
+        public override async Task<ActionResult<BaseClassUM>> UpdateEntityForUsers(int id, BaseClassUUR request, CancellationToken cancellationToken)
         {
-            return _service.UpdateEntityForUsers(id, request);
+            return await base.UpdateEntityForUsers(id, request, cancellationToken);
         }
+
     }
-
 }

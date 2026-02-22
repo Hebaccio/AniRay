@@ -1,6 +1,7 @@
 ﻿using AniRay.API.Controllers.BaseControllers;
 using AniRay.Model;
 using AniRay.Model.Entities;
+using AniRay.Model.Migrations;
 using AniRay.Model.Requests.GetRequests;
 using AniRay.Model.Requests.InsertRequests;
 using AniRay.Model.Requests.SearchRequests;
@@ -14,7 +15,7 @@ namespace AniRay.API.Controllers.BasicEntityControllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class GenderController : BaseCRUDController<BaseClassUM, BaseClassEM, BaseClassUSO, BaseClassESO, AudioFormat,
+    public class GenderController : BaseCRUDController<BaseClassUM, BaseClassEM, BaseClassUSO, BaseClassESO, Gender,
         BaseClassIR, BaseClassIR, BaseClassUUR, BaseClassEUR>
     {
         public GenderController(IGenderService service)
@@ -22,54 +23,53 @@ namespace AniRay.API.Controllers.BasicEntityControllers
         {
         }
 
-        [HttpGet("GetPagedEntityForUsers/EmployeesOnly")]
         [NonAction]
-        public override PagedResult<BaseClassEM> GetPagedEmployees([FromQuery] BaseClassESO searchObject)
+        public override async Task<ActionResult<PagedResult<BaseClassEM>>> GetPagedEntitiesForEmployees([FromQuery] BaseClassESO searchObject, CancellationToken cancellationToken)
         {
-            return _service.GetPagedEntitiesForEmployees(searchObject);
+            return await base.GetPagedEntitiesForEmployees(searchObject, cancellationToken);
         }
 
-        [HttpGet("EntityGetByIdForUsers/EmployeesOnly/{id}")]
         [NonAction]
-        public override BaseClassEM GetByIdEmployees(int id)
+        public override async Task<ActionResult<BaseClassEM>> EntityGetByIdForEmployees(int id, CancellationToken cancellationToken)
         {
-            return _service.EntityGetByIdForEmployees(id);
+            return await base.EntityGetByIdForEmployees(id, cancellationToken);
         }
 
-        [HttpPost("InsertEntityForUsers/EmployeesOnly")]
         [NonAction]
-        public override ServiceResult<BaseClassEM> InsertEmployee(BaseClassIR request)
+        public override async Task<ActionResult<BaseClassEM>> InsertEntityForEmployees(BaseClassIR request, CancellationToken cancellationToken)
         {
-            return _service.InsertEntityForEmployees(request);
+            return await base.InsertEntityForEmployees(request, cancellationToken);
         }
 
-        [HttpPut("UpdateEntityForUsers/EmployeesOnly/{id}")]
         [NonAction]
-        public override ServiceResult<BaseClassEM> UpdateEmployee(int id, BaseClassEUR request)
+        public override async Task<ActionResult<BaseClassEM>> UpdateEntityForEmployees(int id, BaseClassEUR request, CancellationToken cancellationToken)
         {
-            return _service.UpdateEntityForEmployees(id, request);
+            return await base.UpdateEntityForEmployees(id, request, cancellationToken);
         }
 
-        [HttpDelete("SoftDelete/{id}")]
         [NonAction]
-        public override ServiceResult<string> SoftDelete(int id)
+        public override async Task<ActionResult<string>> SoftDelete(int id, CancellationToken cancellationToken)
         {
-            return _service.SoftDelete(id);
+            return await base.SoftDelete(id, cancellationToken);
         }
 
-        [HttpPost("InsertEntityForUsers")]
         [NonAction]
-        public override ServiceResult<BaseClassUM> Insert(BaseClassIR request)
+        public override async Task<ActionResult<BaseClassUM>> EntityGetByIdForUsers(int id, CancellationToken cancellationToken)
         {
-            return _service.InsertEntityForUsers(request);
+            return await base.EntityGetByIdForUsers(id, cancellationToken);
         }
 
-        [HttpPut("UpdateEntityForUsers/{id}")]
         [NonAction]
-        public override ServiceResult<BaseClassUM> Update(int id, BaseClassUUR request)
+        public override async Task<ActionResult<BaseClassUM>> InsertEntityForUsers(BaseClassIR request, CancellationToken cancellationToken)
         {
-            return _service.UpdateEntityForUsers(id, request);
+            return await base.InsertEntityForUsers(request, cancellationToken);
         }
+
+        [NonAction]
+        public override async Task<ActionResult<BaseClassUM>> UpdateEntityForUsers(int id, BaseClassUUR request, CancellationToken cancellationToken)
+        {
+            return await base.UpdateEntityForUsers(id, request, cancellationToken);
+        }
+
     }
-
 }

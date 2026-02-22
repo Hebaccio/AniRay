@@ -1,6 +1,7 @@
 ﻿using AniRay.Model;
 using AniRay.Model.Requests.SearchRequests;
 using AniRay.Services.Interfaces.BaseInterfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,35 +22,39 @@ namespace AniRay.API.Controllers.BaseControllers
             _service = service;
         }
 
-        [HttpPost("InsertEntityForUsers/EmployeesOnly")]
-        public virtual ServiceResult<TModelEmployee> InsertEmployee(TInsertEmployee request)
+        [HttpPost("InsertEntity/ForUsers")]
+        [Authorize(Roles = "User")]
+        public virtual async Task<ActionResult<TModelUser>> InsertEntityForUsers(TInsertUser request, CancellationToken cancellationToken)
         {
-            return _service.InsertEntityForEmployees(request);
+            return await _service.InsertEntityForUsers(request, cancellationToken);
         }
 
-        [HttpPost("InsertEntityForUsers")]
-        public virtual ServiceResult<TModelUser> Insert(TInsertUser request)
+        [HttpPost("InsertEntity/ForEmployees")]
+        [Authorize(Policy = "Workers")]
+        public virtual async Task<ActionResult<TModelEmployee>> InsertEntityForEmployees(TInsertEmployee request, CancellationToken cancellationToken)
         {
-            return _service.InsertEntityForUsers(request);
+            return await _service.InsertEntityForEmployees(request, cancellationToken);
         }
 
-        [HttpPut("UpdateEntityForUsers/EmployeesOnly/{id}")]
-        public virtual ServiceResult<TModelEmployee> UpdateEmployee(int id, TUpdateEmployee request)
+        [HttpPut("UpdateEntity/ForUsers/{id}")]
+        [Authorize(Roles = "User")]
+        public virtual async Task<ActionResult<TModelUser>> UpdateEntityForUsers(int id, TUpdateUser request, CancellationToken cancellationToken)
         {
-            return _service.UpdateEntityForEmployees(id, request);
+            return await _service.UpdateEntityForUsers(id, request, cancellationToken);
         }
 
-        [HttpPut("UpdateEntityForUsers/{id}")]
-        public virtual ServiceResult<TModelUser> Update(int id, TUpdateUser request)
+        [HttpPut("UpdateEntity/ForEmployees/{id}")]
+        [Authorize(Policy = "Workers")]
+        public virtual async Task<ActionResult<TModelEmployee>> UpdateEntityForEmployees(int id, TUpdateEmployee request, CancellationToken cancellationToken)
         {
-            return _service.UpdateEntityForUsers(id, request);
+            return await _service.UpdateEntityForEmployees(id, request, cancellationToken);
         }
 
         [HttpDelete("SoftDelete/{id}")]
-        public virtual ServiceResult<string> SoftDelete(int id)
+        [Authorize]
+        public virtual async Task<ActionResult<string>> SoftDelete(int id, CancellationToken cancellationToken)
         {
-            return _service.SoftDelete(id);
+            return await _service.SoftDelete(id, cancellationToken);
         }
     }
-
 }

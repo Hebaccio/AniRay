@@ -2,8 +2,6 @@ using AniRay.Model.Data;
 using AniRay.Model.Requests.AuthRequests;
 using AniRay.Services.Interfaces;
 using AniRay.Services.Services;
-using AniRay.Services.Services.AuthentificationServices;
-using AniRay.Services.Services.BasicServices;
 using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -12,24 +10,28 @@ using Swashbuckle.AspNetCore.SwaggerUI;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.OpenApi.Models;
+using AniRay.Services.Services.BaseServices;
 using AniRay.Services.Interfaces.BasicServices;
+using AniRay.Services.Services.BasicServices;
+using AniRay.Services.Services.AuthentificationServices;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddTransient<IAudioFormatService, AudioFormatService>();
-builder.Services.AddTransient<IGenderService, GenderService>();
-builder.Services.AddTransient<IGenreService, GenreService>();
-builder.Services.AddTransient<IOrderStatusService, OrderStatusService>();
-builder.Services.AddTransient<IUserRoleService, UserRoleService>();
-builder.Services.AddTransient<IUserStatusService, UserStatusService>();
-builder.Services.AddTransient<IVideoFormatService, VideoFormatService>();
-builder.Services.AddScoped<IMailService, MailService>();
+//builder.Services.AddTransient<IGenderService, GenderService>();
+//builder.Services.AddTransient<IGenreService, GenreService>();
+//builder.Services.AddTransient<IOrderStatusService, OrderStatusService>();
+//builder.Services.AddTransient<IUserRoleService, UserRoleService>();
+//builder.Services.AddTransient<IUserStatusService, UserStatusService>();
+//builder.Services.AddTransient<IVideoFormatService, VideoFormatService>();
+//builder.Services.AddScoped<IBluRayService, BluRayService>();
+//builder.Services.AddScoped<IMovieService, MovieService>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
-builder.Services.AddScoped<IBluRayService, BluRayService>();
-builder.Services.AddScoped<IMovieService, MovieService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IMailService, MailService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+
 
 
 // Controllers

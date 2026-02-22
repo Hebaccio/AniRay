@@ -1,5 +1,6 @@
 ﻿using AniRay.Model;
 using AniRay.Model.Requests.SearchRequests;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -13,10 +14,10 @@ namespace AniRay.Services.Interfaces.BaseInterfaces
         where TSearchUser : BaseSO
         where TSearchEmployee : BaseSO
     {
-        ServiceResult<TModelUser> InsertEntityForUsers(TInsertUser request);
-        ServiceResult<TModelEmployee> InsertEntityForEmployees(TInsertEmployee request);
-        ServiceResult<TModelUser> UpdateEntityForUsers(int id, TUpdateUser request);
-        ServiceResult<TModelEmployee> UpdateEntityForEmployees(int id, TUpdateEmployee request);
-        ServiceResult<string> SoftDelete(int id);
+        Task<ActionResult<TModelUser>> InsertEntityForUsers(TInsertUser request, CancellationToken cancellationToken);
+        Task<ActionResult<TModelEmployee>> InsertEntityForEmployees(TInsertEmployee request, CancellationToken cancellationToken);
+        Task<ActionResult<TModelUser>> UpdateEntityForUsers(int id, TUpdateUser request, CancellationToken cancellationToken);
+        Task<ActionResult<TModelEmployee>> UpdateEntityForEmployees(int id, TUpdateEmployee request, CancellationToken cancellationToken);
+        Task<ActionResult<string>> SoftDelete(int id, CancellationToken cancellationToken);
     }
 }

@@ -1,6 +1,7 @@
 ﻿using AniRay.Model;
 using AniRay.Model.Requests.SearchRequests;
 using AniRay.Services.Interfaces.BaseInterfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,28 +19,30 @@ namespace AniRay.API.Controllers.BaseControllers
             _service = service;
         }
 
-        [HttpGet("GetPagedEntityForUsers/EmployeesOnly")]
-        public virtual PagedResult<TModelEmployee> GetPagedEmployees([FromQuery] TSearchEmployee searchObject)
+        [HttpGet("EntityGetById/ForUsers/{id}")]
+        public virtual async Task<ActionResult<TModelUser>> EntityGetByIdForUsers(int id, CancellationToken cancellationToken)
         {
-            return _service.GetPagedEntitiesForEmployees(searchObject);
+            return await _service.EntityGetByIdForUsers(id, cancellationToken);
         }
 
-        [HttpGet("EntityGetByIdForUsers/EmployeesOnly/{id}")]
-        public virtual TModelEmployee GetByIdEmployees(int id)
+        [HttpGet("GetPagedEntity/ForUsers")]
+        public virtual async Task<ActionResult<PagedResult<TModelUser>>> GetPagedEntityForUsers([FromQuery] TSearchUser searchObject, CancellationToken cancellationToken)
         {
-            return _service.EntityGetByIdForEmployees(id);
+            return await _service.GetPagedEntityForUsers(searchObject, cancellationToken);
         }
 
-        [HttpGet("GetPagedEntityForUsers")]
-        public virtual PagedResult<TModelUser> GetPaged([FromQuery] TSearchUser searchObject)
+        [HttpGet("EntityGetById/ForEmployees/{id}")]
+        [Authorize(Policy = "Workers")]
+        public virtual async Task<ActionResult<TModelEmployee>> EntityGetByIdForEmployees(int id, CancellationToken cancellationToken)
         {
-            return _service.GetPagedEntityForUsers(searchObject);
+            return await _service.EntityGetByIdForEmployees(id, cancellationToken);
         }
 
-        [HttpGet("EntityGetByIdForUsers/{id}")]
-        public virtual TModelUser GetById(int id)
+        [HttpGet("GetPagedEntity/ForEmployees")]
+        [Authorize(Policy = "Workers")]
+        public virtual async Task<ActionResult<PagedResult<TModelEmployee>>> GetPagedEntitiesForEmployees([FromQuery] TSearchEmployee searchObject, CancellationToken cancellationToken)
         {
-            return _service.EntityGetByIdForUsers(id);
+            return await _service.GetPagedEntityForEmployees(searchObject, cancellationToken);
         }
     }
 }

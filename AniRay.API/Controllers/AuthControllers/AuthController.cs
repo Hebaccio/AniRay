@@ -42,17 +42,17 @@ namespace AniRay.API.Controllers.EntityControllers
         }
 
         [HttpPost("Register")]
-        public async Task<IActionResult> Register([FromBody] UserIR request)
+        public async Task<IActionResult> Register([FromBody] UserIR request, CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var result = _userService.InsertEntityForUsers(request);
+            var result = await _userService.InsertEntityForUsers(request, cancellationToken);
 
-            if (!result.Success)
-                return BadRequest(result.Message);
+            if (result.Result != null)
+                return result.Result;
 
-            var createdUser = result.Data;
+            var createdUser = result.Value!;
 
             await _mailService.SendEmailAsync(
                     createdUser.Email,
@@ -69,17 +69,17 @@ namespace AniRay.API.Controllers.EntityControllers
         }
 
         [HttpPost("Login")]
-        public async Task<IActionResult> Login([FromBody] LoginDto dto)
+        public async Task<IActionResult> Login([FromBody] LoginDto dto, CancellationToken cancellationToken)
         {
-            var user = await _context.Users.Where(u => u.Email == dto.Email).Include(u => u.UserRole).FirstOrDefaultAsync();
+            var user = await _context.Users.Include(u => u.UserRole).FirstOrDefaultAsync(u => u.Email == dto.Email, cancellationToken);
             if (user == null) return Unauthorized();
 
             var isPasswordValid = PasswordHelper.VerifyPassword(dto.Password, user.PasswordHash, user.PasswordSalt);
-            if(!isPasswordValid) return Unauthorized("Invalid email or password.");
+            if (!isPasswordValid) return Unauthorized("Invalid email or password.");
 
             if (user.TwoFA)
             {
-                var existingRecord = await _context.twoWayAuths.FirstOrDefaultAsync(x => x.UserId == user.Id);
+                var existingRecord = await _context.twoWayAuths.FirstOrDefaultAsync(x => x.UserId == user.Id, cancellationToken);
                 if (existingRecord != null) _context.twoWayAuths.Remove(existingRecord);
 
                 string plainCode = TwoFactorAuthHelper.CodeGeneration();
@@ -92,7 +92,7 @@ namespace AniRay.API.Controllers.EntityControllers
 
                 var new2FA = TwoFactorAuthHelper.NewRecord(user.Id, plainCode);
                 _context.twoWayAuths.Add(new2FA);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return Ok(new { TwoFactorRequired = true, UserId = user.Id });
             }
@@ -120,24 +120,28 @@ namespace AniRay.API.Controllers.EntityControllers
             };
 
             _context.RefreshTokens.Add(rt);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             return Ok(new AuthResult(accessToken, refreshToken, accessExpiry));
         }
 
         [HttpPost("Verify-2FA")]
-        public async Task<IActionResult> Verify2FA([FromBody] Verify2FADto dto)
+        public async Task<IActionResult> Verify2FA([FromBody] Verify2FADto dto, CancellationToken cancellationToken)
         {
-            var UserCode = await _context.twoWayAuths.FirstOrDefaultAsync(x => x.UserId == dto.UserId);
-            var SentCode = TwoFactorAuthHelper.Hash2FA(dto.Code, UserCode.CreatedAt);
+            var UserCode = await _context.twoWayAuths.FirstOrDefaultAsync(x => x.UserId == dto.UserId, cancellationToken);
+            if (UserCode == null)
+                return Unauthorized("2FA session expired or invalid.");
 
+            var SentCode = TwoFactorAuthHelper.Hash2FA(dto.Code, UserCode.CreatedAt);
             if (SentCode != UserCode.Code)
                 return Unauthorized("Invalid 2FA code.");
 
             _context.twoWayAuths.Remove(UserCode);
-            await _context.SaveChangesAsync();
 
-            var user = await _context.Users.Where(u=> u.Id == dto.UserId).Include(u=> u.UserRole).FirstOrDefaultAsync();
+            var user = await _context.Users.Include(u => u.UserRole).FirstOrDefaultAsync(u => u.Id == dto.UserId, cancellationToken);
+            if (user == null)
+                return Unauthorized("User doesn't exist.");
+
             var role = user.UserRole.Name;
 
             var claims = new List<Claim>
@@ -161,20 +165,27 @@ namespace AniRay.API.Controllers.EntityControllers
             };
 
             _context.Add(rt);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             return Ok(new AuthResult(accessToken, refreshToken, accessExpiry));
         }
 
         [HttpPost("Refresh")]
-        public async Task<IActionResult> Refresh([FromBody] RefreshRequestDto dto)
+        public async Task<IActionResult> Refresh([FromBody] RefreshRequestDto dto, CancellationToken cancellationToken)
         {
-            var stored = await _context.RefreshTokens.SingleOrDefaultAsync(t => t.Token == dto.RefreshToken);
+            if (dto == null || string.IsNullOrWhiteSpace(dto.RefreshToken) || string.IsNullOrWhiteSpace(dto.AccessToken))
+                return BadRequest("Invalid request.");
+            
+            var stored = await _context.RefreshTokens.SingleOrDefaultAsync(t => t.Token == dto.RefreshToken, cancellationToken);
             if (stored == null || stored.Revoked || stored.Expires < DateTime.UtcNow)
                 return Unauthorized("Invalid refresh token");
 
             var principal = _tokenService.GetPrincipalFromExpiredToken(dto.AccessToken);
             if (principal == null) return Unauthorized();
+
+            var userIdFromAccessToken = principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            if (userIdFromAccessToken == null || userIdFromAccessToken != stored.UserId.ToString())
+                return Unauthorized("Token mismatch.");
 
             stored.Revoked = true;
             var newRefresh = _tokenService.CreateRefreshToken();
@@ -190,7 +201,7 @@ namespace AniRay.API.Controllers.EntityControllers
 
             _context.RefreshTokens.Add(newRt);
             _context.RefreshTokens.Update(stored);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             var identity = new ClaimsIdentity(principal.Claims);
             var newAccessExpiry = DateTime.UtcNow.AddMinutes(int.Parse(_config["Jwt:AccessTokenExpirationMinutes"]!));
@@ -200,23 +211,18 @@ namespace AniRay.API.Controllers.EntityControllers
         }
 
         [HttpPost("Logout")]
-        public async Task<IActionResult> Logout([FromBody] LogoutDto dto)
+        public async Task<IActionResult> Logout([FromBody] LogoutDto dto, CancellationToken cancellationToken)
         {
-            var token = await _context.RefreshTokens.SingleOrDefaultAsync(t => t.Token == dto.RefreshToken);
+            var token = await _context.RefreshTokens.SingleOrDefaultAsync(t => t.Token == dto.RefreshToken, cancellationToken);
             if (token == null)
-            {
                 return NotFound("Refresh token not found.");
-            }
-
             if (token.Revoked)
-            {
                 return BadRequest("Refresh token already revoked.");
-            }
 
             token.Revoked = true;
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
-            return NoContent();
+            return Ok();
         }
     }
 }

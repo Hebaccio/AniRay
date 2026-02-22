@@ -9,40 +9,66 @@ using AniRay.Services.Helpers;
 using AniRay.Services.Interfaces;
 using AniRay.Services.Services.BaseServices;
 using MapsterMapper;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
 using System.Linq.Dynamic.Core;
-using System.Security.Claims;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using static AniRay.Services.Helpers.CoreData;
 
 namespace AniRay.Services.Services
 {
-    public class UserService : 
-        BaseCRUDService<UserUM, UserEM, UserESO, UserESO, User,UserIR, UserIR, UserUUR, UserEUR>, IUserService
+    public class UserService :
+        BaseCRUDService<UserUM, UserEM, UserESO, UserESO, User, UserIR, UserIR, UserUUR, UserEUR>, IUserService
     {
         private readonly ICurrentUserService _currentUser;
-        //private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public UserService(AniRayDbContext context, IMapper mapper, ICurrentUserService currentUser) : base(context, mapper)
+        public UserService(AniRayDbContext context, IMapper mapper, ICurrentUserService currentUser) : base(context, mapper, currentUser)
         {
             _currentUser = currentUser;
         }
 
-        //Add methods for: Add Employee, Add Boss, UpdateEntityForUsers Employee/Boss (Boss only)
-
-        #region Get Filters
-        public override IQueryable<User> AddFiltersEmployees(UserESO search, IQueryable<User> query)
+        #region Get By Id - For Users
+        public override bool IsGetByIdForUsersAuthorized(int? id)
         {
-            base.AddFiltersEmployees(search, query);
+            return _currentUser.IsAuthenticated && (_currentUser.IsUser() && _currentUser.IsSelf(id.Value));
+        }
+        public override IQueryable<User> AddGetByIdFiltersForUsers(IQueryable<User> query)
+        {
+            query = query.Include(u => u.UserRole);
+            query = query.Include(u => u.UserStatus);
+            query = query.Include(u => u.Gender);
 
-            if (!_currentUser.IsWorker())
-                return null;
+            return query;
+        }
+        #endregion
 
+        #region Get Paged - For Users
+        //Has no implementation for User class/table
+        #endregion
+
+        #region Get By Id - For Employees
+        public override bool IsGetByIdForEmployeesAuthorized()
+        {
+            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
+        }
+        public override IQueryable<User> AddGetByIdFiltersForEmployees(IQueryable<User> query)
+        {
+            query = query.Include(u => u.UserRole);
+            query = query.Include(u => u.UserStatus);
+            query = query.Include(u => u.Gender);
+
+            return query;
+        }
+        #endregion
+
+        #region Get Paged - For Employees
+        public override bool IsGetPagedForEmployeesAuthorized()
+        {
+            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
+        }
+        public override IQueryable<User> AddGetPagedFiltersForEmployees(UserESO search, IQueryable<User> query)
+        {
             if (!string.IsNullOrEmpty(search.UsernameFTS))
                 query = query.Where(u => u.Username.Contains(search.UsernameFTS));
 
@@ -86,54 +112,11 @@ namespace AniRay.Services.Services
 
             return query;
         }
-        public override IQueryable<User> AddGetByIdFiltersEmployees(IQueryable<User> query)
-        {
-            base.AddGetByIdFiltersEmployees(query);
-
-            query = query.Include(u => u.UserRole);
-            query = query.Include(u => u.UserStatus);
-            query = query.Include(u => u.Gender);
-
-            return query;
-        }
-        public override IQueryable<User> AddGetByIdFilters(IQueryable<User> query)
-        {
-            base.AddGetByIdFilters(query);
-
-            query = query.Include(u => u.UserRole);
-            query = query.Include(u => u.UserStatus);
-            query = query.Include(u => u.Gender);
-
-            return query;
-        }
-        public override UserUM EntityGetByIdForUsers(int id)
-        {
-            if (!_currentUser.IsUser() || !_currentUser.IsSelf(id))
-                return null;
-
-            return base.EntityGetByIdForUsers(id);
-        }
-        public override UserEM EntityGetByIdForEmployees(int id)
-        {
-            if (!_currentUser.IsWorker())
-                return null;
-
-            return base.EntityGetByIdForEmployees(id);
-        }
-        public override Model.PagedResult<UserEM> GetPagedEntitiesForEmployees(UserESO search)
-        {
-            if (!_currentUser.IsWorker())
-                return null;
-
-            return base.GetPagedEntitiesForEmployees(search);
-        }
         #endregion
 
-        #region Insert
-        public override ServiceResult<bool> BeforeInsert(UserIR request, User entity)
+        #region Insert - For Users
+        public override async Task<ServiceResult<bool>> BeforeInsertForUsers(UserIR request, User entity, CancellationToken cancellationToken)
         {
-            base.BeforeInsert(request, entity);
-            
             if (request == null)
                 return ServiceResult<bool>.Fail("Request cannot be null.");
 
@@ -147,12 +130,12 @@ namespace AniRay.Services.Services
 
             if (IsBirthdayInvalid(request.Birthday))
                 return ServiceResult<bool>.Fail("Birthday cannot be in the future or before January 1, 1900.");
-            if (IsUsernameTaken(request.Username, null))
+            if (await IsUsernameTaken(request.Username, null, cancellationToken))
                 return ServiceResult<bool>.Fail("Username already exists.");
-            if (IsEmailTaken(request.Email, null))
+            if (await IsEmailTaken(request.Email, null, cancellationToken))
                 return ServiceResult<bool>.Fail("Email already exists.");
 
-            var fkResult = ValidateForeignKeys(request.GenderId);
+            var fkResult = await ValidateForeignKeys(request.GenderId, cancellationToken);
             if (!fkResult.Success)
                 return fkResult;
 
@@ -166,79 +149,7 @@ namespace AniRay.Services.Services
 
             return ServiceResult<bool>.Ok(true);
         }
-        #endregion
 
-        #region Update
-        public override ServiceResult<bool> BeforeUpdate(UserUUR request, User entity)
-        {
-            base.BeforeUpdate(request, entity);
-
-            if (!_currentUser.IsUser() || !_currentUser.IsSelf(entity.Id))
-                return ServiceResult<bool>.Fail("Unauthorized action");
-
-            if (request == null)
-                return ServiceResult<bool>.Fail("Request cannot be null.");
-
-            if (entity == null || entity.UserStatusId != (int)CoreData.CoreUserStatus.Active)
-                return ServiceResult<bool>.Fail($"Action unavailable because the user is Suspended or Deleted");
-
-            var nullCheck = BeforeUpdateNullCheck(request);
-            if (!nullCheck.Success)
-                return nullCheck;
-
-            var validationCheck = BeforeUpdateValidation(request);
-            if (!validationCheck.Success)
-                return validationCheck;
-
-            if (IsUsernameTaken(request.Username, entity.Id))
-                return ServiceResult<bool>.Fail("Username already exists.");
-            if (IsEmailTaken(request.Email, entity.Id))
-                return ServiceResult<bool>.Fail("Email already exists.");
-            if (IsBirthdayInvalid(request.Birthday))
-                return ServiceResult<bool>.Fail("Birthday cannot be in the future or before January 1, 1900.");
-
-            var fkResult = ValidateForeignKeys(request.GenderId);
-            if (!fkResult.Success)
-                return fkResult;
-
-            return ServiceResult<bool>.Ok(true);
-        }
-        public override ServiceResult<bool> BeforeUpdateEmployee(UserEUR request, User entity)
-        {
-            base.BeforeUpdateEmployee(request, entity);
-
-            if (request == null)
-                return ServiceResult<bool>.Fail("Request cannot be null.");
-
-            Context.Entry(entity).Reference(u => u.UserRole).Load();
-            Context.Entry(entity).Reference(u => u.UserStatus).Load();
-
-            if (!_currentUser.IsEmployee() || entity.UserRole.Name != CoreUserRole.User.ToString())
-                return ServiceResult<bool>.Fail("Unauthorized action");
-
-            var nullCheck = BeforeUpdateEmployeesNullCheck(request);
-            if (!nullCheck.Success)
-                return nullCheck;
-
-            var validationCheck = BeforeUpdateEmployeesValidation(request);
-            if (!validationCheck.Success)
-                return validationCheck;
-
-            if (IsUsernameTaken(request.Username, entity.Id))
-                return ServiceResult<bool>.Fail("Username already exists.");
-            if (IsEmailTaken(request.Email, entity.Id))
-                return ServiceResult<bool>.Fail("Email already exists.");
-            if (IsBirthdayInvalid(request.Birthday))
-                return ServiceResult<bool>.Fail("Birthday cannot be in the future or before January 1, 1900.");
-            var fkResult = ValidateForeignKeysEmployee(request.UserStatusId);
-            if (!fkResult.Success)
-                return fkResult;
-
-            return ServiceResult<bool>.Ok(true);
-        }
-        #endregion
-
-        #region Insert/Update Filters
         private ServiceResult<bool> BeforeInsertNullCheck(UserIR request)
         {
             if (string.IsNullOrEmpty(request?.Pfp?.Trim()))
@@ -253,7 +164,7 @@ namespace AniRay.Services.Services
                 return ServiceResult<bool>.Fail("Email cannot be null.");
             if (string.IsNullOrEmpty(request?.Password?.Trim()))
                 return ServiceResult<bool>.Fail("Password cannot be null.");
-            if (request.Birthday == null)
+            if (request?.Birthday == null)
                 return ServiceResult<bool>.Fail("Birthday cannot be null.");
 
             return ServiceResult<bool>.Ok(true);
@@ -272,6 +183,77 @@ namespace AniRay.Services.Services
                 return ServiceResult<bool>.Fail("Email cannot exceed 50 characters.");
             if (request.Password.Length < 6 || request.Password.Length > 15)
                 return ServiceResult<bool>.Fail("Password must be between 6 and 15 characters.");
+
+            return ServiceResult<bool>.Ok(true);
+        }
+
+
+        private async Task<bool> IsUsernameTaken(string username, int? currentUserId, CancellationToken cancellationToken = default)
+        {
+            if (currentUserId == null)
+                return await Context.Set<User>().AnyAsync(u => u.Username == username, cancellationToken);
+
+            return await Context.Set<User>().AnyAsync(u => u.Username == username && u.Id != currentUserId, cancellationToken);
+        }
+        private async Task<bool> IsEmailTaken(string email, int? currentUserId, CancellationToken cancellationToken = default)
+        {
+            if (currentUserId == null)
+                return await Context.Set<User>().AnyAsync(u => u.Email == email, cancellationToken);
+
+            return await Context.Set<User>().AnyAsync(u => u.Email == email && u.Id != currentUserId, cancellationToken);
+        }
+        private bool IsBirthdayInvalid(DateOnly? birthday)
+        {
+            if (!birthday.HasValue)
+                return true;
+
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var earliestAllowed = new DateOnly(1900, 1, 1);
+
+            return birthday.Value > today || birthday.Value < earliestAllowed;
+        }
+        private async Task<ServiceResult<bool>> ValidateForeignKeys(int genderId, CancellationToken cancellationToken = default)
+        {
+            bool exists = await Context.Set<Gender>().AnyAsync(x => x.Id == genderId, cancellationToken);
+
+            if (!exists)
+                return ServiceResult<bool>.Fail("Selected gender does not exist.");
+
+            return ServiceResult<bool>.Ok(true);
+        }
+        #endregion
+
+        #region Update - For Users
+        public override bool IsUpdateForUsersAuthorized(int? id)
+        {
+            return _currentUser.IsAuthenticated && (_currentUser.IsUser() && _currentUser.IsSelf(id.Value));
+        }
+        public override async Task<ServiceResult<bool>> BeforeUpdateForUsers(UserUUR request, User entity, CancellationToken cancellationToken)
+        {
+            if (request == null)
+                return ServiceResult<bool>.Fail("Request cannot be null.");
+
+            if (entity == null || entity.UserStatusId != (int)CoreData.CoreUserStatus.Active)
+                return ServiceResult<bool>.Fail($"Action unavailable because the user is Suspended or Deleted");
+
+            var nullCheck = BeforeUpdateNullCheck(request);
+            if (!nullCheck.Success)
+                return nullCheck;
+
+            var validationCheck = BeforeUpdateValidation(request);
+            if (!validationCheck.Success)
+                return validationCheck;
+
+            if (await IsUsernameTaken(request.Username, entity.Id))
+                return ServiceResult<bool>.Fail("Username already exists.");
+            if (await IsEmailTaken(request.Email, entity.Id))
+                return ServiceResult<bool>.Fail("Email already exists.");
+            if (IsBirthdayInvalid(request.Birthday))
+                return ServiceResult<bool>.Fail("Birthday cannot be in the future or before January 1, 1900.");
+
+            var fkResult = await ValidateForeignKeys(request.GenderId);
+            if (!fkResult.Success)
+                return fkResult;
 
             return ServiceResult<bool>.Ok(true);
         }
@@ -309,6 +291,49 @@ namespace AniRay.Services.Services
             return ServiceResult<bool>.Ok(true);
         }
 
+        #endregion
+
+        #region Insert - For Employees
+        //Has no implementation for User class/table
+        #endregion
+
+        #region Update - For Employees
+        public override bool IsUpdateForEmployeesAuthorized()
+        {
+            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
+        }
+        public override async Task<ServiceResult<bool>> BeforeUpdateForEmployees(UserEUR request, User entity, CancellationToken cancellationToken)
+        {
+            if (request == null)
+                return ServiceResult<bool>.Fail("Request cannot be null.");
+
+            await Context.Entry(entity).Reference(u => u.UserRole).LoadAsync();
+            await Context.Entry(entity).Reference(u => u.UserStatus).LoadAsync();
+
+            if (entity.UserRole.Name != CoreUserRole.User.ToString())
+                return ServiceResult<bool>.Fail("Unauthorized action");
+
+            var nullCheck = BeforeUpdateEmployeesNullCheck(request);
+            if (!nullCheck.Success)
+                return nullCheck;
+
+            var validationCheck = BeforeUpdateEmployeesValidation(request);
+            if (!validationCheck.Success)
+                return validationCheck;
+
+            if (await IsUsernameTaken(request.Username, entity.Id, cancellationToken))
+                return ServiceResult<bool>.Fail("Username already exists.");
+            if (await IsEmailTaken(request.Email, entity.Id, cancellationToken))
+                return ServiceResult<bool>.Fail("Email already exists.");
+            if (IsBirthdayInvalid(request.Birthday))
+                return ServiceResult<bool>.Fail("Birthday cannot be in the future or before January 1, 1900.");
+            var fkResult = await ValidateForeignKeysEmployee(request.UserStatusId, cancellationToken);
+            if (!fkResult.Success)
+                return fkResult;
+
+            return ServiceResult<bool>.Ok(true);
+        }
+
         private ServiceResult<bool> BeforeUpdateEmployeesNullCheck(UserEUR request)
         {
             if (string.IsNullOrEmpty(request?.Pfp?.Trim()))
@@ -341,64 +366,37 @@ namespace AniRay.Services.Services
 
             return ServiceResult<bool>.Ok(true);
         }
-
-        private bool IsUsernameTaken(string username, int? currentUserId)
+        private async Task<ServiceResult<bool>> ValidateForeignKeysEmployee(int userStatusId, CancellationToken cancellationToken)
         {
-            if (currentUserId == null)
-                return Context.Set<User>().Any(u => u.Username == username);
-
-            return Context.Set<User>().Any(u => u.Username == username && u.Id != currentUserId);
-        }
-        private bool IsEmailTaken(string email, int? currentUserId)
-        {
-            if (currentUserId == null)
-                return Context.Set<User>().Any(u => u.Email == email);
-
-            return Context.Set<User>().Any(u => u.Email == email && u.Id != currentUserId);
-        }
-        private bool IsBirthdayInvalid(DateOnly? birthday)
-        {
-            if (!birthday.HasValue)
-                return true;
-
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
-            var earliestAllowed = new DateOnly(1900, 1, 1);
-
-            return birthday.Value > today || birthday.Value < earliestAllowed;
-        }
-        private ServiceResult<bool> ValidateForeignKeys(int genderId)
-        {
-            if (!Context.Set<Gender>().Any(x => x.Id == genderId))
-                return ServiceResult<bool>.Fail("Selected gender does not exist.");
-
-            return ServiceResult<bool>.Ok(true);
-        }
-        private ServiceResult<bool> ValidateForeignKeysEmployee(int userStatusId)
-        {
-            if (!Context.Set<UserStatus>().Any(x => x.Id == userStatusId))
+            var success = await Context.Set<UserStatus>().AnyAsync(x => x.Id == userStatusId, cancellationToken);
+            if (!success)
                 return ServiceResult<bool>.Fail("Selected User status does not exist.");
 
             return ServiceResult<bool>.Ok(true);
         }
+
         #endregion
 
         #region Soft Delete
-        public override ServiceResult<string> SoftDelete(int id)
+        public override bool IsSoftDeleteAuthorized(int id)
         {
-            if (!_currentUser.IsAuthenticated || !_currentUser.IsUser() || !_currentUser.IsSelf(id))
-                return ServiceResult<string>.Fail("Unauthorized action");
+            return _currentUser.IsAuthenticated && (_currentUser.IsUser() && _currentUser.IsSelf(id));
+        }
+        public override async Task<ActionResult<string>> SoftDelete(int id, CancellationToken cancellationToken)
+        {
+            if (!IsSoftDeleteAuthorized(id))
+                return new UnauthorizedResult();
 
-            var entity = Context.Set<User>().Find(id);
+            var entity = await Context.Set<User>().FindAsync(id, cancellationToken);
             if (entity == null)
-                return ServiceResult<string>.Fail("User not found in the database.");
+                return new NotFoundObjectResult(new { message = "User not found in the database." });
 
             entity.UserStatusId = (int)CoreUserStatus.Deleted;
+            await Context.SaveChangesAsync(cancellationToken);
 
-            Context.SaveChanges();
-
-            return ServiceResult<string>.Ok($"User {entity.Name} {entity.LastName} is successfully deleted.");
+            return new OkObjectResult(new { message = $"User {entity.Name} {entity.LastName} is successfully deleted." });
         }
         #endregion
+
     }
 }
-

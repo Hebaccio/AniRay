@@ -1,92 +1,53 @@
 ﻿using AniRay.API.Controllers.BaseControllers;
 using AniRay.Model;
+using AniRay.Model.Data;
 using AniRay.Model.Entities;
-using AniRay.Model.Migrations;
 using AniRay.Model.Requests.GetRequests;
 using AniRay.Model.Requests.InsertRequests;
 using AniRay.Model.Requests.SearchRequests;
 using AniRay.Model.Requests.UpdateRequests;
 using AniRay.Services.Interfaces;
-using AniRay.Services.Interfaces.BasicServices;
+using AniRay.Services.Services.AuthentificationServices;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 
-namespace AniRay.API.Controllers.BasicEntityControllers
+namespace AniRay.API.Controllers.EntityControllers
 {
     [ApiController]
     [Route("[controller]")]
     public class UserController : BaseCRUDController<UserUM, UserEM, UserESO, UserESO, User, UserIR, UserIR, UserUUR, UserEUR>
     {
-        public UserController(IUserService service)
-            : base(service)
-        {
-        }
 
-        [HttpGet("GetPagedEntityForUsers/EmployeesOnly")]
-        [Authorize(Policy = "Workers")]
-        public override PagedResult<UserEM> GetPagedEmployees([FromQuery] UserESO searchObject)
-        {
-            return _service.GetPagedEntitiesForEmployees(searchObject);
-        }
+        public UserController(IUserService userService) : base(userService) { }
 
-        [HttpGet("EntityGetByIdForUsers/EmployeesOnly/{id}")]
-        [Authorize(Policy = "Workers")]
-        public override UserEM GetByIdEmployees(int id)
-        {
-            return _service.EntityGetByIdForEmployees(id);
-        }
-
-        [HttpPut("UpdateEntityForUsers/EmployeesOnly/{id}")]
-        [Authorize(Policy = "Workers")]
-        public override ServiceResult<UserEM> UpdateEmployee(int id, UserEUR request)
-        {
-            return _service.UpdateEntityForEmployees(id, request);
-        }
-
-        [HttpDelete("SoftDelete/{id}")]
-        [Authorize(Roles = "User")]
-        public override ServiceResult<string> SoftDelete(int id)
-        {
-            return _service.SoftDelete(id);
-        }
-
-        [HttpPut("UpdateEntityForUsers/{id}")]
-        [Authorize(Roles = "User")]
-        public override ServiceResult<UserUM> Update(int id, UserUUR request)
-        {
-            return _service.UpdateEntityForUsers(id, request);
-        }
-
-
-        [HttpGet("EntityGetByIdForUsers/{id}")]
-        [Authorize(Roles = "User")]
-        public override UserUM GetById(int id)
-        {
-            return base.GetById(id);
-        }
-
-        [HttpPost("InsertEntityForUsers/EmployeesOnly")]
         [NonAction]
-        public override ServiceResult<UserEM> InsertEmployee(UserIR request)
+        public override async Task<ActionResult<UserEM>> InsertEntityForEmployees(UserIR request, CancellationToken cancellationToken)
         {
-            return _service.InsertEntityForEmployees(request);
+            return await base.InsertEntityForEmployees(request, cancellationToken);
         }
 
-        [HttpPost("InsertEntityForUsers")]
-        [NonAction]
-        public override ServiceResult<UserUM> Insert(UserIR request)
+        [Authorize(Roles = "User")]
+        public override async Task<ActionResult<string>> SoftDelete(int id, CancellationToken cancellationToken)
         {
-            return _service.InsertEntityForUsers(request);
+            return await base.SoftDelete(id, cancellationToken);
         }
 
-        [HttpGet("GetPagedEntityForUsers")]
-        [NonAction]
-        public override PagedResult<UserUM> GetPaged([FromQuery] UserESO searchObject)
+        [Authorize(Roles = "User")]
+        public override async Task<ActionResult<UserUM>> EntityGetByIdForUsers(int id, CancellationToken cancellationToken)
         {
-            return base.GetPaged(searchObject);
+            return await base.EntityGetByIdForUsers(id, cancellationToken);
+        }
+
+        [NonAction]
+        public override async Task<ActionResult<PagedResult<UserUM>>> GetPagedEntityForUsers([FromQuery] UserESO searchObject, CancellationToken cancellationToken)
+        {
+            return await base.GetPagedEntityForUsers(searchObject, cancellationToken);
+        }
+
+        [NonAction]
+        public override async Task<ActionResult<UserUM>> InsertEntityForUsers(UserIR request, CancellationToken cancellationToken)
+        {
+            return await  base.InsertEntityForUsers(request, cancellationToken);
         }
     }
 }
