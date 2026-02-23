@@ -17,11 +17,11 @@ namespace AniRay.Services.Services.BaseServices
         where TSearchEmployee : BaseSO
         where TDbEntity : class
     {
-        private readonly ICurrentUserService _currentUserService;
+        private readonly ICurrentUserService _currentUser;
 
-        public BaseCRUDService(AniRayDbContext context, IMapper mapper, ICurrentUserService currentUserService) : base(context, mapper, currentUserService)
+        public BaseCRUDService(AniRayDbContext context, IMapper mapper, ICurrentUserService currentUser) : base(context, mapper, currentUser)
         {
-            _currentUserService = currentUserService;
+            _currentUser = currentUser;
         }
 
         #region Insert - For Users

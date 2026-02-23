@@ -19,13 +19,13 @@ namespace AniRay.Services.Services.BaseServices
     {
         public AniRayDbContext Context { get; set; }
         public IMapper Mapper { get; set; }
-        private readonly ICurrentUserService _currentUserService;
+        private readonly ICurrentUserService _currentUser;
 
-        public BaseService(AniRayDbContext context, IMapper mapper, ICurrentUserService currentUserService)
+        public BaseService(AniRayDbContext context, IMapper mapper, ICurrentUserService currentUser)
         {
             Context = context;
             Mapper = mapper;
-            _currentUserService = currentUserService;
+            _currentUser = currentUser;
         }
 
         #region Get By Id - For Users

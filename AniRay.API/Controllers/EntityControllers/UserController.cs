@@ -18,7 +18,7 @@ namespace AniRay.API.Controllers.EntityControllers
     public class UserController : BaseCRUDController<UserUM, UserEM, UserESO, UserESO, User, UserIR, UserIR, UserUUR, UserEUR>
     {
 
-        public UserController(IUserService userService) : base(userService) { }
+        public UserController(IUserService Service) : base(Service) { }
 
         [NonAction]
         public override async Task<ActionResult<UserEM>> InsertEntityForEmployees(UserIR request, CancellationToken cancellationToken)
