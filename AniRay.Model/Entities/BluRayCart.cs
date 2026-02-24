@@ -11,9 +11,9 @@ namespace AniRay.Model.Entities
         [Key]
         public int Id { get; set; }
 
-        [ForeignKey("UserId")]
-        public int UserId { get; set; }
-        public User User { get; set; }
+        [ForeignKey("CartId")]
+        public int CartId { get; set; }
+        public UserCart UserCart { get; set; }
 
         [ForeignKey("BluRayId")]
         public int BluRayId { get; set; }

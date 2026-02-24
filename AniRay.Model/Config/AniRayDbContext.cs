@@ -46,6 +46,10 @@ namespace AniRay.Model.Data
                 .Property(o => o.FullPrice)
                 .HasPrecision(18, 2);
 
+            modelBuilder.Entity<UserCart>()
+                .Property(o => o.FullCartPrice)
+                .HasPrecision(18, 2);
+
             AddDataSeeders(modelBuilder);
         }
 

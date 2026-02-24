@@ -31,8 +31,7 @@ builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IMailService, MailService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
-
-
+builder.Services.AddScoped<IUserCartService, UserCartService>();
 
 // Controllers
 builder.Services.AddControllers()

@@ -31,14 +31,16 @@ namespace AniRay.API.Controllers.EntityControllers
         private readonly IConfiguration _config;
         private readonly IMailService _mailService;
         private readonly IUserService _userService;
+        private readonly IUserCartService _userCartService;
 
-        public AuthController(ITokenService tokenService, AniRayDbContext context, IConfiguration config, IMailService mailService, IUserService userService)
+        public AuthController(ITokenService tokenService, AniRayDbContext context, IConfiguration config, IMailService mailService, IUserService userService, IUserCartService userCartService  )
         {
             _tokenService = tokenService;
             _context = context;
             _config = config;
             _mailService = mailService;
             _userService = userService;
+            _userCartService = userCartService;
         }
 
         [HttpPost("Register")]
@@ -47,12 +49,18 @@ namespace AniRay.API.Controllers.EntityControllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var result = await _userService.InsertEntityForUsers(request, cancellationToken);
+            var resultUserInsert = await _userService.InsertEntityForUsers(request, cancellationToken);
 
-            if (result.Result != null)
-                return result.Result;
+            if (resultUserInsert.Result is not OkObjectResult okResult)
+                return resultUserInsert.Result;
 
-            var createdUser = result.Value!;
+            var createdUser = (UserUM)okResult.Value!;
+
+            UserCartIR user = new UserCartIR() { UserId = createdUser.Id };
+            var resultUserCartInsert = await _userCartService.InsertEntityForUsers(user, cancellationToken);
+
+            if (resultUserCartInsert.Result is not OkObjectResult okResult2)
+                return resultUserCartInsert.Result;
 
             await _mailService.SendEmailAsync(
                     createdUser.Email,

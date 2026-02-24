@@ -4,6 +4,7 @@ using AniRay.Model.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AniRay.Model.Migrations
 {
     [DbContext(typeof(AniRayDbContext))]
-    partial class AniRayDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260224100148_UpdateUserCart")]
+    partial class UpdateUserCart
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -735,9 +738,9 @@ namespace AniRay.Model.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal>("FullCartPrice")
+                    b.Property<double>("FullCartPrice")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("float(18)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
