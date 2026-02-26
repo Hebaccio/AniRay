@@ -1,19 +1,20 @@
 using AniRay.Model.Data;
 using AniRay.Model.Requests.AuthRequests;
+using AniRay.Services.Helpers;
 using AniRay.Services.Interfaces;
+using AniRay.Services.Interfaces.BasicServices;
 using AniRay.Services.Services;
+using AniRay.Services.Services.AuthentificationServices;
+using AniRay.Services.Services.BaseServices;
+using AniRay.Services.Services.BasicServices;
 using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerUI;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.OpenApi.Models;
-using AniRay.Services.Services.BaseServices;
-using AniRay.Services.Interfaces.BasicServices;
-using AniRay.Services.Services.BasicServices;
-using AniRay.Services.Services.AuthentificationServices;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,6 +33,9 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IMailService, MailService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IUserCartService, UserCartService>();
+builder.Services.AddScoped<IRequestService, RequestService>();
+
+MapsterConfig.RegisterMappings();
 
 // Controllers
 builder.Services.AddControllers()

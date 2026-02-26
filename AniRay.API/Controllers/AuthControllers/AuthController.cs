@@ -32,8 +32,13 @@ namespace AniRay.API.Controllers.EntityControllers
         private readonly IMailService _mailService;
         private readonly IUserService _userService;
         private readonly IUserCartService _userCartService;
+        private readonly ICurrentUserService _currentUser;
 
-        public AuthController(ITokenService tokenService, AniRayDbContext context, IConfiguration config, IMailService mailService, IUserService userService, IUserCartService userCartService  )
+        public AuthController(
+            ITokenService tokenService, AniRayDbContext context, 
+            IConfiguration config, IMailService mailService, 
+            IUserService userService, IUserCartService userCartService, 
+            ICurrentUserService currentUserService )
         {
             _tokenService = tokenService;
             _context = context;
@@ -41,6 +46,7 @@ namespace AniRay.API.Controllers.EntityControllers
             _mailService = mailService;
             _userService = userService;
             _userCartService = userCartService;
+            _currentUser = currentUserService;
         }
 
         [HttpPost("Register")]
@@ -109,7 +115,7 @@ namespace AniRay.API.Controllers.EntityControllers
 
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.Email),
                 new Claim(ClaimTypes.Role, role)
             };
@@ -183,30 +189,30 @@ namespace AniRay.API.Controllers.EntityControllers
         {
             if (dto == null || string.IsNullOrWhiteSpace(dto.RefreshToken) || string.IsNullOrWhiteSpace(dto.AccessToken))
                 return BadRequest("Invalid request.");
-            
+
             var stored = await _context.RefreshTokens.SingleOrDefaultAsync(t => t.Token == dto.RefreshToken, cancellationToken);
             if (stored == null || stored.Revoked || stored.Expires < DateTime.UtcNow)
                 return Unauthorized("Invalid refresh token");
 
             var principal = _tokenService.GetPrincipalFromExpiredToken(dto.AccessToken);
-            if (principal == null) return Unauthorized();
+            if (principal == null)
+                return Unauthorized("Invalid access token");
 
-            var userIdFromAccessToken = principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
-            if (userIdFromAccessToken == null || userIdFromAccessToken != stored.UserId.ToString())
-                return Unauthorized("Token mismatch.");
+            var userIdFromAccessToken = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userIdFromAccessToken != stored.UserId.ToString())
+                return Unauthorized("Token mismatch");
 
             stored.Revoked = true;
-            var newRefresh = _tokenService.CreateRefreshToken();
-            stored.ReplacedByToken = newRefresh;
+            var newRefreshToken = _tokenService.CreateRefreshToken();
+            stored.ReplacedByToken = newRefreshToken;
 
             var newRt = new RefreshToken
             {
-                Token = newRefresh,
+                Token = newRefreshToken,
                 UserId = stored.UserId,
                 Created = DateTime.UtcNow,
                 Expires = DateTime.UtcNow.AddDays(int.Parse(_config["Jwt:RefreshTokenExpirationDays"]!))
             };
-
             _context.RefreshTokens.Add(newRt);
             _context.RefreshTokens.Update(stored);
             await _context.SaveChangesAsync(cancellationToken);
@@ -215,7 +221,7 @@ namespace AniRay.API.Controllers.EntityControllers
             var newAccessExpiry = DateTime.UtcNow.AddMinutes(int.Parse(_config["Jwt:AccessTokenExpirationMinutes"]!));
             var newAccessToken = _tokenService.CreateAccessToken(identity, newAccessExpiry);
 
-            return Ok(new AuthResult(newAccessToken, newRefresh, newAccessExpiry));
+            return Ok(new AuthResult(newAccessToken, newRefreshToken, newAccessExpiry));
         }
 
         [HttpPost("Logout")]

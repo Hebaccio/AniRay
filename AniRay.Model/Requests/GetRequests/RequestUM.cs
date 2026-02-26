@@ -1,21 +1,21 @@
-﻿using System;
+﻿using AniRay.Model.Entities;
+using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
-namespace AniRay.Model.Entities
+namespace AniRay.Model.Requests.GetRequests
 {
-    public class Request
+    public class RequestUM
     {
-        [Key]
         public int Id { get; set; }
         public string Title { get; set; }
         public string Text { get; set; }
         public DateTime DateTime { get; set; }
-
-        [ForeignKey("UserId")]
         public int UserId { get; set; }
-        public User User { get; set; }
+        public string UserFullName { get; set; }
+        public string UserMail { get; set; }
     }
 }

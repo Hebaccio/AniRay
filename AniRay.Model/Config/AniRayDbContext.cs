@@ -27,7 +27,6 @@ namespace AniRay.Model.Data
         public DbSet<OrderStatus> OrderStatuses { get; set; }
         public DbSet<OrderBluRay> OrderBluRays { get; set; }
         public DbSet<Request> Requests { get; set; }
-        public DbSet<RequestUser> RequestUsers { get; set; }
         public DbSet<UserFavorites> UserFavorites { get; set; }
         public DbSet<BluRayCart> BluRayCarts { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
