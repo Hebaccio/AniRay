@@ -34,6 +34,7 @@ builder.Services.AddScoped<IMailService, MailService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IUserCartService, UserCartService>();
 builder.Services.AddScoped<IRequestService, RequestService>();
+builder.Services.AddScoped<IUserFavoritesService, UserFavoritesService>();
 
 MapsterConfig.RegisterMappings();
 
