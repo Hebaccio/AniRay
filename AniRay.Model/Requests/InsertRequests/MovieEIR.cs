@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace AniRay.Model.Requests.InsertRequests
 {
-    public class MovieIR
+    public class MovieEIR
     {
         public string Image { get; set; }
         public string Title { get; set; }

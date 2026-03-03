@@ -50,7 +50,7 @@ namespace AniRay.API.Controllers.EntityControllers
         }
 
         [HttpPost("Register")]
-        public async Task<IActionResult> Register([FromBody] UserIR request, CancellationToken cancellationToken)
+        public async Task<IActionResult> Register([FromBody] UserUIR request, CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -62,7 +62,7 @@ namespace AniRay.API.Controllers.EntityControllers
 
             var createdUser = (UserUM)okResult.Value!;
 
-            UserCartIR user = new UserCartIR() { UserId = createdUser.Id };
+            UserCartUIR user = new UserCartUIR() { UserId = createdUser.Id };
             var resultUserCartInsert = await _userCartService.InsertEntityForUsers(user, cancellationToken);
 
             if (resultUserCartInsert.Result is not OkObjectResult okResult2)

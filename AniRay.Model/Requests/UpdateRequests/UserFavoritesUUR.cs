@@ -1,5 +1,4 @@
 ﻿using AniRay.Model.Entities;
-using AniRay.Model.Requests.GetRequests;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -9,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace AniRay.Model.Requests.UpdateRequests
 {
-    public class UserCartUR
+    public class UserFavoritesUUR
     {
-        public string CartNotes { get; set; } = string.Empty;
-        public virtual ICollection<BluRayCartUR>? BluRay { get; set; } = new List<BluRayCartUR>();
+        //public int UserId { get; set; }
+        public List<int>? MovieId { get; set; }
     }
 }

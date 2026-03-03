@@ -1,6 +1,7 @@
 ﻿using AniRay.Model;
 using AniRay.Model.Data;
 using AniRay.Model.Entities;
+using AniRay.Model.Migrations;
 using AniRay.Model.Requests.GetRequests;
 using AniRay.Model.Requests.InsertRequests;
 using AniRay.Model.Requests.SearchRequests;
@@ -19,7 +20,7 @@ using static AniRay.Services.Helpers.CoreData;
 namespace AniRay.Services.Services
 {
     public class UserService :
-        BaseCRUDService<UserUM, UserEM, UserESO, UserESO, User, UserIR, UserIR, UserUUR, UserEUR>, IUserService
+        BaseCRUDService<UserUM, UserEM, UserUSO, UserESO, User, UserUIR, UserEIR, UserUUR, UserEUR>, IUserService
     {
         private readonly ICurrentUserService _currentUser;
 
@@ -29,9 +30,9 @@ namespace AniRay.Services.Services
         }
 
         #region Get By Id - For Users
-        public override bool IsGetByIdForUsersAuthorized(int? id)
+        public override bool IsGetByIdForUsersAuthorized()
         {
-            return _currentUser.IsAuthenticated && (_currentUser.IsUser() && _currentUser.IsSelf(id.Value));
+            return _currentUser.IsAuthenticated && _currentUser.IsUser();
         }
         public override IQueryable<User> AddGetByIdFiltersForUsers(IQueryable<User> query)
         {
@@ -41,17 +42,13 @@ namespace AniRay.Services.Services
 
             return query;
         }
-        #endregion
-
-        #region Get Paged - For Users
-        //Has no implementation for User class/table
+        public override async Task<User?> EntityGetTrigger(int? id, IQueryable<User> query, CancellationToken cancellationToken)
+        {
+            return await query.FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == _currentUser.UserId, cancellationToken);
+        }
         #endregion
 
         #region Get By Id - For Employees
-        public override bool IsGetByIdForEmployeesAuthorized()
-        {
-            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
-        }
         public override IQueryable<User> AddGetByIdFiltersForEmployees(IQueryable<User> query)
         {
             query = query.Include(u => u.UserRole);
@@ -62,11 +59,11 @@ namespace AniRay.Services.Services
         }
         #endregion
 
+        #region Get Paged - For Users
+        //Doesn't Exist
+        #endregion
+
         #region Get Paged - For Employees
-        public override bool IsGetPagedForEmployeesAuthorized()
-        {
-            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
-        }
         public override IQueryable<User> AddGetPagedFiltersForEmployees(UserESO search, IQueryable<User> query)
         {
             if (!string.IsNullOrEmpty(search.UsernameFTS))
@@ -115,7 +112,7 @@ namespace AniRay.Services.Services
         #endregion
 
         #region Insert - For Users
-        public override async Task<ServiceResult<bool>> BeforeInsertForUsers(UserIR request, User entity, CancellationToken cancellationToken)
+        public override async Task<ServiceResult<bool>> BeforeInsertForUsers(UserUIR request, User entity, CancellationToken cancellationToken)
         {
             if (request == null)
                 return ServiceResult<bool>.Fail("Request cannot be null.");
@@ -150,7 +147,7 @@ namespace AniRay.Services.Services
             return ServiceResult<bool>.Ok(true);
         }
 
-        private ServiceResult<bool> BeforeInsertNullCheck(UserIR request)
+        private ServiceResult<bool> BeforeInsertNullCheck(UserUIR request)
         {
             if (string.IsNullOrEmpty(request?.Pfp?.Trim()))
                 return ServiceResult<bool>.Fail("Profile picture cannot be null.");
@@ -169,7 +166,7 @@ namespace AniRay.Services.Services
 
             return ServiceResult<bool>.Ok(true);
         }
-        private ServiceResult<bool> BeforeInsertValidation(UserIR request)
+        private ServiceResult<bool> BeforeInsertValidation(UserUIR request)
         {
             if (request.Pfp.Length > 300)
                 return ServiceResult<bool>.Fail("Profile picture URL cannot exceed 300 characters.");
@@ -186,7 +183,6 @@ namespace AniRay.Services.Services
 
             return ServiceResult<bool>.Ok(true);
         }
-
 
         private async Task<bool> IsUsernameTaken(string username, int? currentUserId, CancellationToken cancellationToken = default)
         {
@@ -223,10 +219,18 @@ namespace AniRay.Services.Services
         }
         #endregion
 
+        #region Insert - For Employees
+        //Doesn't Exist
+        #endregion
+
         #region Update - For Users
-        public override bool IsUpdateForUsersAuthorized(int? id)
+        public override bool IsUpdateForUsersAuthorized()
         {
-            return _currentUser.IsAuthenticated && (_currentUser.IsUser() && _currentUser.IsSelf(id.Value));
+            return _currentUser.IsAuthenticated && _currentUser.IsUser();
+        }
+        public override async Task<User?> EntityGetTriggerForUpdate(int? id, UserUUR? request, CancellationToken cancellationToken)
+        {
+            return await Context.Set<User>().FindAsync(_currentUser.UserId, cancellationToken);
         }
         public override async Task<ServiceResult<bool>> BeforeUpdateForUsers(UserUUR request, User entity, CancellationToken cancellationToken)
         {
@@ -293,15 +297,7 @@ namespace AniRay.Services.Services
 
         #endregion
 
-        #region Insert - For Employees
-        //Has no implementation for User class/table
-        #endregion
-
         #region Update - For Employees
-        public override bool IsUpdateForEmployeesAuthorized()
-        {
-            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
-        }
         public override async Task<ServiceResult<bool>> BeforeUpdateForEmployees(UserEUR request, User entity, CancellationToken cancellationToken)
         {
             if (request == null)
@@ -374,20 +370,16 @@ namespace AniRay.Services.Services
 
             return ServiceResult<bool>.Ok(true);
         }
-
         #endregion
 
-        #region Soft Delete
-        public override bool IsSoftDeleteAuthorized(int id)
+        #region SoftDelete
+
+        public override async Task<ActionResult<string>> SoftDelete(int? id, CancellationToken cancellationToken)
         {
-            return _currentUser.IsAuthenticated && (_currentUser.IsUser() && _currentUser.IsSelf(id));
-        }
-        public override async Task<ActionResult<string>> SoftDelete(int id, CancellationToken cancellationToken)
-        {
-            if (!IsSoftDeleteAuthorized(id))
+            if (!IsSoftDeleteAuthorized())
                 return new UnauthorizedResult();
 
-            var entity = await Context.Set<User>().FindAsync(id, cancellationToken);
+            var entity = await Context.Set<User>().FindAsync(_currentUser.UserId, cancellationToken);
             if (entity == null)
                 return new NotFoundObjectResult(new { message = "User not found in the database." });
 
@@ -395,6 +387,10 @@ namespace AniRay.Services.Services
             await Context.SaveChangesAsync(cancellationToken);
 
             return new OkObjectResult(new { message = $"User {entity.Name} {entity.LastName} is successfully deleted." });
+        }
+        private bool IsSoftDeleteAuthorized()
+        {
+            return _currentUser.IsAuthenticated && _currentUser.IsUser();
         }
         #endregion
 

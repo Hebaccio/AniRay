@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace AniRay.Services.Interfaces
 {
-    public interface IBluRayService : ICRUDService<BluRayUM, BluRayEM, BluRayUSO, BluRayESO, BluRayIR, BluRayIR, BluRayUR, BluRayUR>
+    public interface IBluRayService : ICRUDService<BluRayUM, BluRayEM, BluRayUSO, BluRayESO, BluRayUIR, BluRayEIR, BluRayUUR, BluRayEUR>
     {
     }
 }

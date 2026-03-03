@@ -15,8 +15,7 @@ namespace AniRay.API.Controllers.BasicEntityControllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class UserStatusController : BaseCRUDController<BaseClassUM, BaseClassEM, BaseClassUSO, BaseClassESO, UserStatus,
-        BaseClassIR, BaseClassIR, BaseClassUUR, BaseClassEUR>
+    public class UserStatusController : BasicEntityController<UserStatus>
     {
         public UserStatusController(IUserStatusService service)
             : base(service)
@@ -24,13 +23,13 @@ namespace AniRay.API.Controllers.BasicEntityControllers
         }
 
         [NonAction]
-        public override async Task<ActionResult<BaseClassEM>> EntityGetByIdForEmployees(int id, CancellationToken cancellationToken)
+        public override async Task<ActionResult<PagedResult<BaseClassUM>>> GetPagedEntityForUsers([FromQuery] BaseClassUSO searchObject, CancellationToken cancellationToken)
         {
-            return await base.EntityGetByIdForEmployees(id, cancellationToken);
+            return await base.GetPagedEntityForUsers(searchObject, cancellationToken);
         }
 
         [NonAction]
-        public override async Task<ActionResult<BaseClassEM>> InsertEntityForEmployees(BaseClassIR request, CancellationToken cancellationToken)
+        public override async Task<ActionResult<BaseClassEM>> InsertEntityForEmployees(BaseClassEIR request, CancellationToken cancellationToken)
         {
             return await base.InsertEntityForEmployees(request, cancellationToken);
         }
@@ -45,30 +44,6 @@ namespace AniRay.API.Controllers.BasicEntityControllers
         public override async Task<ActionResult<string>> SoftDelete(int id, CancellationToken cancellationToken)
         {
             return await base.SoftDelete(id, cancellationToken);
-        }
-
-        [NonAction]
-        public override async Task<ActionResult<BaseClassUM>> EntityGetByIdForUsers(int id, CancellationToken cancellationToken)
-        {
-            return await base.EntityGetByIdForUsers(id, cancellationToken);
-        }
-
-        [NonAction]
-        public override async Task<ActionResult<BaseClassUM>> InsertEntityForUsers(BaseClassIR request, CancellationToken cancellationToken)
-        {
-            return await base.InsertEntityForUsers(request, cancellationToken);
-        }
-
-        [NonAction]
-        public override async Task<ActionResult<BaseClassUM>> UpdateEntityForUsers(int id, BaseClassUUR request, CancellationToken cancellationToken)
-        {
-            return await base.UpdateEntityForUsers(id, request, cancellationToken);
-        }
-
-        [NonAction]
-        public override async Task<ActionResult<PagedResult<BaseClassUM>>> GetPagedEntityForUsers([FromQuery] BaseClassUSO searchObject, CancellationToken cancellationToken)
-        {
-            return await base.GetPagedEntityForUsers(searchObject, cancellationToken);
         }
 
     }

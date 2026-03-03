@@ -17,7 +17,7 @@ namespace AniRay.Services.Services.BaseServices
             BaseClassUM, BaseClassEM,
             BaseClassUSO, BaseClassESO,
             TDbEntity,
-            BaseClassIR, BaseClassIR,
+            BaseClassUIR, BaseClassEIR,
             BaseClassUUR, BaseClassEUR>
         where TDbEntity : BaseClass
     {
@@ -29,35 +29,21 @@ namespace AniRay.Services.Services.BaseServices
         }
 
         #region Get By Id - For Users
-        public override IQueryable<TDbEntity> AddGetByIdFiltersForUsers(IQueryable<TDbEntity> query)
-        {
-            return query.Where(b => !b.IsDeleted);
-        }
+        //Doesn't Exist
         #endregion
 
-        #region  Get Paged - For Users
+        #region Get By Id - For Employees
+        //Doesn't Exist
+        #endregion
+
+        #region Get Paged - For Users
         public override IQueryable<TDbEntity> AddGetPagedFiltersForUsers(BaseClassUSO search, IQueryable<TDbEntity> query)
         {
             return query.Where(x => !x.IsDeleted);
         }
         #endregion
 
-        #region  Get By Id - For Employees
-        public override bool IsGetByIdForEmployeesAuthorized()
-        {
-            if(_currentUser.IsAuthenticated && _currentUser.IsWorker())
-                return true;
-            return false;
-        }
-        #endregion
-
         #region Get Paged - For Employees
-        public override bool IsGetPagedForEmployeesAuthorized()
-        {
-            if (_currentUser.IsAuthenticated && _currentUser.IsWorker())
-                return true;
-            return false;
-        }
         public override IQueryable<TDbEntity> AddGetPagedFiltersForEmployees(BaseClassESO search, IQueryable<TDbEntity> query)
         {
             if (!string.IsNullOrEmpty(search.NameFTS))
@@ -70,21 +56,11 @@ namespace AniRay.Services.Services.BaseServices
         #endregion
 
         #region Insert - For Users
-        //It doesn't exist for these types of entities
-        #endregion
-
-        #region Update - For Users
-        //It doesn't exist for these types of entities
+        //Doesn't Exist
         #endregion
 
         #region Insert - For Employees
-        public override bool IsInsertForEmployeesAuthorized()
-        {
-            if (_currentUser.IsAuthenticated && _currentUser.IsWorker())
-                return true;
-            return false;
-        }
-        public override async Task<ServiceResult<bool>> BeforeInsertForEmployees(BaseClassIR request, TDbEntity entity, CancellationToken cancellationToken)
+        public override async Task<ServiceResult<bool>> BeforeInsertForEmployees(BaseClassEIR request, TDbEntity entity, CancellationToken cancellationToken)
         {
             bool exists = await Context.Set<TDbEntity>().AnyAsync(x => x.Name == request.Name, cancellationToken);
             if (exists)
@@ -94,13 +70,11 @@ namespace AniRay.Services.Services.BaseServices
         }
         #endregion
 
+        #region Update - For Users
+        //Doesn't Exist
+        #endregion
+
         #region Update - For Employees
-        public override bool IsUpdateForEmployeesAuthorized()
-        {
-            if (_currentUser.IsAuthenticated && _currentUser.IsWorker())
-                return true;
-            return false;
-        }
         public override async Task<ServiceResult<bool>> BeforeUpdateForEmployees(BaseClassEUR request, TDbEntity entity, CancellationToken cancellationToken)
         {
             bool exists = await Context.Set<TDbEntity>().AnyAsync(x => x.Name == request.Name && x.Id != entity.Id && !x.IsDeleted, cancellationToken);
@@ -112,16 +86,14 @@ namespace AniRay.Services.Services.BaseServices
         }
         #endregion
 
-        #region Soft Delete
-        public override bool IsSoftDeleteAuthorized(int id)
+        #region SoftDelete
+        public bool IsSoftDeleteAuthorized()
         {
-            if (_currentUser.IsAuthenticated && _currentUser.IsWorker())
-                return true;
-            return false;
+            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
         }
-        public override async Task<ActionResult<string>> SoftDelete(int id, CancellationToken cancellationToken)
+        public override async Task<ActionResult<string>> SoftDelete(int? id, CancellationToken cancellationToken)
         {
-            if (!IsSoftDeleteAuthorized(id))
+            if (!IsSoftDeleteAuthorized())
                 return new UnauthorizedResult();
 
             var entity = await Context.Set<TDbEntity>().FindAsync(id, cancellationToken);
@@ -135,5 +107,7 @@ namespace AniRay.Services.Services.BaseServices
             return new OkObjectResult(new { message = "Deleted successfully." });
         }
         #endregion
+
+
     }
 }

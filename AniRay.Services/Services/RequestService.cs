@@ -14,13 +14,13 @@ using Microsoft.Identity.Client;
 using MimeKit;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace AniRay.Services.Services
 {
-    public class RequestService : BaseCRUDService<RequestUM, RequestUM, RequestUSO, RequestESO, Request, RequestUIR, RequestUIR, RequestUUR, RequestUUR>, IRequestService
+    public class RequestService : BaseCRUDService<RequestUM, RequestEM, RequestUSO, RequestESO, Request, RequestUIR, RequestEIR, RequestUUR, RequestEUR>, IRequestService
     {
         private readonly ICurrentUserService _currentUser;
         public RequestService(AniRayDbContext context, IMapper mapper, ICurrentUserService currentUser) : base(context, mapper, currentUser) 
@@ -28,53 +28,20 @@ namespace AniRay.Services.Services
             _currentUser = currentUser;
         }
 
-        #region Get By Id - User
-        public override async Task<ActionResult<RequestUM>> EntityGetByIdForUsers(int id, CancellationToken cancellationToken)
-        {
-            if (!IsGetByIdForUsersAuthorized(_currentUser.UserId))
-                return new UnauthorizedResult();
-            IQueryable<Request> query = Context.Set<Request>().AsQueryable();
-            query = AddGetByIdFiltersForUsers(query);
-
-            var entity = await query.FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == id, cancellationToken);
-
-            if (entity == null)
-                return new NotFoundObjectResult(new { message = $"Entity with ID {id} not found." });
-
-            var mapped = Mapper.Map<RequestUM>(entity);
-
-            return new OkObjectResult(mapped);
-        }
-        public override bool IsGetByIdForUsersAuthorized(int? id)
-        {
-            return _currentUser.IsAuthenticated && (_currentUser.IsUser() && _currentUser.IsSelf(id.Value));
-        }
-        public override IQueryable<Request> AddGetByIdFiltersForUsers(IQueryable<Request> query)
-        {
-            query = query.Where(r=> r.UserId == _currentUser.UserId);
-            query = query.Include(r => r.User);
-            return query;
-        }
-        #endregion
-
-        #region Get Paged - User
-        public override bool IsGetPagedForUsersAuthorized()
+        #region Get By Id - For Users
+        public override bool IsGetByIdForUsersAuthorized()
         {
             return _currentUser.IsAuthenticated && _currentUser.IsUser();
         }
-        public override IQueryable<Request> AddGetPagedFiltersForUsers(RequestUSO search, IQueryable<Request> query)
+        public override IQueryable<Request> AddGetByIdFiltersForUsers(IQueryable<Request> query)
         {
-            query = query.Where(r=> r.UserId == search.UserId);
+            query = query.Where(r => r.UserId == _currentUser.UserId);
             query = query.Include(r => r.User);
             return query;
         }
         #endregion
 
-        #region Get By Id - Employee
-        public override bool IsGetByIdForEmployeesAuthorized()
-        {
-            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
-        }
+        #region Get By Id - For Employees
         public override IQueryable<Request> AddGetByIdFiltersForEmployees(IQueryable<Request> query)
         {
             query = query.Include(r => r.User);
@@ -82,25 +49,43 @@ namespace AniRay.Services.Services
         }
         #endregion
 
-        #region Get Paged - Employee
-        public override bool IsGetPagedForEmployeesAuthorized()
+        #region Get Paged - For Users
+        public override bool IsGetPagedForUsersAuthorized()
         {
-            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
+            return _currentUser.IsAuthenticated && _currentUser.IsUser();
         }
+        public override IQueryable<Request> AddGetPagedFiltersForUsers(RequestUSO search, IQueryable<Request> query)
+        {
+            query = query.Where(r => r.UserId == _currentUser.UserId);
+            query = query.Include(r => r.User);
+            return query;
+        }
+        #endregion
+
+        #region Get Paged - For Employees
         public override IQueryable<Request> AddGetPagedFiltersForEmployees(RequestESO search, IQueryable<Request> query)
         {
             query = query.Include(r => r.User);
 
             if (!string.IsNullOrEmpty(search.TitleFTS))
-                query = query.Where(r=> r.Title.Contains(search.TitleFTS));
+                query = query.Where(r => r.Title.Contains(search.TitleFTS));
             if (!string.IsNullOrEmpty(search.UserFullNameFTS))
                 query = query.Where(r => r.User.Name.Contains(search.UserFullNameFTS) || r.User.LastName.Contains(search.UserFullNameFTS));
             if (!string.IsNullOrEmpty(search.UserMailFTS))
-                query = query.Where(r=> r.User.Email.Contains(search.UserMailFTS));
-            if(search.DateTimeGTE != null)
-                query = query.Where(r=> r.DateTime >= search.DateTimeGTE);
+                query = query.Where(r => r.User.Email.Contains(search.UserMailFTS));
+            if (search.DateTimeGTE != null)
+                query = query.Where(r => r.DateTime >= search.DateTimeGTE);
             if (search.DateTimeLTE != null)
                 query = query.Where(r => r.DateTime <= search.DateTimeLTE);
+
+            if (search.OrderBy.HasValue)
+            {
+                var sort = search.SortType?.ToString() ?? "descending";
+                var finalOrderBy = $"{search.OrderBy} {sort}";
+                query = query.OrderBy(finalOrderBy);
+            }
+
+            query = query.Include(r => r.User);
 
             return query;
         }
@@ -122,15 +107,32 @@ namespace AniRay.Services.Services
             if (request.Text.Length < 20)
                 return ServiceResult<bool>.Fail("Request text must be longer than 20 characters");
 
-            bool exists = await Context.Set<User>().AnyAsync(x => x.Id == _currentUser.UserId, cancellationToken);
-            if (!exists)
-                return ServiceResult<bool>.Fail("Selected User does not exist.");
+            var user = await Context.Set<User>().FirstOrDefaultAsync(x => x.Id == _currentUser.UserId, cancellationToken);
+            if (user == null)
+                return ServiceResult<bool>.Fail("Selected user does not exist.");
 
-            entity.UserId = (int)_currentUser.UserId;
+            entity.UserId = user.Id;
+            entity.User = user;
             entity.DateTime = DateTime.UtcNow;
 
             return ServiceResult<bool>.Ok(true);
         }
+        #endregion
+
+        #region Insert - For Employees
+        //Doesn't Exist
+        #endregion
+
+        #region Update - For Users
+        //Doesn't Exist
+        #endregion
+
+        #region Update - For Employees
+        //Doesn't Exist
+        #endregion
+
+        #region SoftDelete
+        //Doesn't Exist
         #endregion
 
     }

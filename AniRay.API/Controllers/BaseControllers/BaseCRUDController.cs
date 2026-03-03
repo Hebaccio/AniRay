@@ -43,6 +43,14 @@ namespace AniRay.API.Controllers.BaseControllers
             return await _service.UpdateEntityForUsers(id, request, cancellationToken);
         }
 
+        [HttpPut("UpdateEntity/ForUsers")]
+        [Authorize(Roles = "User")]
+        [NonAction]
+        public virtual async Task<ActionResult<TModelUser>> UpdateEntityForUsers(TUpdateUser request, CancellationToken cancellationToken)
+        {
+            return await _service.UpdateEntityForUsers(null, request, cancellationToken);
+        }
+
         [HttpPut("UpdateEntity/ForEmployees/{id}")]
         [Authorize(Policy = "Workers")]
         public virtual async Task<ActionResult<TModelEmployee>> UpdateEntityForEmployees(int id, TUpdateEmployee request, CancellationToken cancellationToken)
@@ -51,10 +59,18 @@ namespace AniRay.API.Controllers.BaseControllers
         }
 
         [HttpDelete("SoftDelete/{id}")]
-        [Authorize]
+        [Authorize(Policy = "Workers")]
         public virtual async Task<ActionResult<string>> SoftDelete(int id, CancellationToken cancellationToken)
         {
             return await _service.SoftDelete(id, cancellationToken);
+        }
+
+        [HttpDelete("SoftDelete")]
+        [Authorize(Policy = "Workers")]
+        [NonAction]
+        public virtual async Task<ActionResult<string>> SoftDelete(CancellationToken cancellationToken)
+        {
+            return await _service.SoftDelete(null, cancellationToken);
         }
     }
 }

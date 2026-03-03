@@ -2,6 +2,7 @@
 using AniRay.Model;
 using AniRay.Model.Data;
 using AniRay.Model.Entities;
+using AniRay.Model.Migrations;
 using AniRay.Model.Requests.GetRequests;
 using AniRay.Model.Requests.InsertRequests;
 using AniRay.Model.Requests.SearchRequests;
@@ -15,51 +16,93 @@ namespace AniRay.API.Controllers.EntityControllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class UserCartController : BaseCRUDController<UserCartUM, UserCartUM, BaseSO, BaseSO, UserCart, UserCartIR, UserCartIR, UserCartUR, UserCartUR>
+    public class UserCartController : BaseCRUDController<UserCartUM, UserCartEM, BaseSO, BaseSO, UserCart, UserCartUIR, UserCartEIR, UserCartUUR, UserCartEUR>
     {
         public UserCartController(IUserCartService Service) : base(Service) { }
 
-        [NonAction]
-        public override async Task<ActionResult<UserCartUM>> EntityGetByIdForEmployees(int id, CancellationToken cancellationToken)
+
+        [HttpGet("EntityGetById/ForUsers")]
+        [Authorize(Roles = "User")]
+        public new async Task<ActionResult<UserCartUM>> EntityGetByIdForUsers(CancellationToken cancellationToken)
         {
-            return await base.EntityGetByIdForEmployees(id, cancellationToken);
+            return await _service.EntityGetByIdForUsers(null, cancellationToken);
         }
 
-        [NonAction]
-        public override async Task<ActionResult<UserCartUM>> InsertEntityForEmployees(UserCartIR request, CancellationToken cancellationToken)
+        [HttpPut("UpdateEntity/ForUsers")]
+        [Authorize(Roles = "User")]
+        public new async Task<ActionResult<UserCartUM>> UpdateEntityForUsers(UserCartUUR request, CancellationToken cancellationToken)
         {
-            return await base.InsertEntityForEmployees(request, cancellationToken);
+            return await _service.UpdateEntityForUsers(null, request, cancellationToken);
         }
 
+        [HttpGet("EntityGetById/ForUsers/{id}")]
         [NonAction]
-        public override async Task<ActionResult<UserCartUM>> UpdateEntityForEmployees(int id, UserCartUR request, CancellationToken cancellationToken)
+        public override async Task<ActionResult<UserCartUM>> EntityGetByIdForUsers(int id, CancellationToken cancellationToken)
         {
-            return await base.UpdateEntityForEmployees(id, request, cancellationToken);
+            return await _service.EntityGetByIdForUsers(id, cancellationToken);
         }
 
-        [NonAction]
-        public override async Task<ActionResult<string>> SoftDelete(int id, CancellationToken cancellationToken)
-        {
-            return await base.SoftDelete(id, cancellationToken);
-        }
-
-        [NonAction]
-        public override async Task<ActionResult<UserCartUM>> InsertEntityForUsers(UserCartIR request, CancellationToken cancellationToken)
-        {
-            return await base.InsertEntityForUsers(request, cancellationToken);
-        }
-
+        [HttpGet("GetPagedEntity/ForUsers")]
         [NonAction]
         public override async Task<ActionResult<PagedResult<UserCartUM>>> GetPagedEntityForUsers([FromQuery] BaseSO searchObject, CancellationToken cancellationToken)
         {
-            return await base.GetPagedEntityForUsers(searchObject, cancellationToken);
+            return await _service.GetPagedEntityForUsers(searchObject, cancellationToken);
         }
 
+        [HttpGet("EntityGetById/ForEmployees/{id}")]
+        [Authorize(Policy = "Workers")]
         [NonAction]
-        public override async Task<ActionResult<PagedResult<UserCartUM>>> GetPagedEntitiesForEmployees([FromQuery] BaseSO searchObject, CancellationToken cancellationToken)
+        public override async Task<ActionResult<UserCartEM>> EntityGetByIdForEmployees(int id, CancellationToken cancellationToken)
         {
-            return await base.GetPagedEntitiesForEmployees(searchObject, cancellationToken);
+            return await _service.EntityGetByIdForEmployees(id, cancellationToken);
         }
 
+        [HttpGet("GetPagedEntity/ForEmployees")]
+        [Authorize(Policy = "Workers")]
+        [NonAction]
+        public override async Task<ActionResult<PagedResult<UserCartEM>>> GetPagedEntitiesForEmployees([FromQuery] BaseSO searchObject, CancellationToken cancellationToken)
+        {
+            return await _service.GetPagedEntityForEmployees(searchObject, cancellationToken);
+        }
+
+        [HttpPost("InsertEntity/ForUsers")]
+        [Authorize(Roles = "User")]
+        [NonAction]
+        public override async Task<ActionResult<UserCartUM>> InsertEntityForUsers(UserCartUIR request, CancellationToken cancellationToken)
+        {
+            return await _service.InsertEntityForUsers(request, cancellationToken);
+        }
+
+        [HttpPost("InsertEntity/ForEmployees")]
+        [Authorize(Policy = "Workers")]
+        [NonAction]
+        public override async Task<ActionResult<UserCartEM>> InsertEntityForEmployees(UserCartEIR request, CancellationToken cancellationToken)
+        {
+            return await _service.InsertEntityForEmployees(request, cancellationToken);
+        }
+
+        [HttpPut("UpdateEntity/ForUsers/{id}")]
+        [Authorize(Roles = "User")]
+        [NonAction]
+        public override async Task<ActionResult<UserCartUM>> UpdateEntityForUsers(int id, UserCartUUR request, CancellationToken cancellationToken)
+        {
+            return await _service.UpdateEntityForUsers(id, request, cancellationToken);
+        }
+
+        [HttpPut("UpdateEntity/ForEmployees/{id}")]
+        [Authorize(Policy = "Workers")]
+        [NonAction]
+        public override async Task<ActionResult<UserCartEM>> UpdateEntityForEmployees(int id, UserCartEUR request, CancellationToken cancellationToken)
+        {
+            return await _service.UpdateEntityForEmployees(id, request, cancellationToken);
+        }
+
+        [HttpDelete("SoftDelete/{id}")]
+        [Authorize(Policy = "Workers")]
+        [NonAction]
+        public override async Task<ActionResult<string>> SoftDelete(int id, CancellationToken cancellationToken)
+        {
+            return await _service.SoftDelete(id, cancellationToken);
+        }
     }
 }

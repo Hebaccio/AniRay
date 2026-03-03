@@ -1,4 +1,5 @@
-﻿using AniRay.Model.Requests.GetRequests;
+﻿using AniRay.Model.Entities;
+using AniRay.Model.Requests.GetRequests;
 using AniRay.Model.Requests.InsertRequests;
 using AniRay.Model.Requests.SearchRequests;
 using AniRay.Model.Requests.UpdateRequests;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 namespace AniRay.Services.Interfaces
 {
     public interface IUserService :
-        ICRUDService<UserUM, UserEM, UserESO, UserESO, UserIR, UserIR, UserUUR, UserEUR>
+        ICRUDService<UserUM, UserEM, UserUSO, UserESO, UserUIR, UserEIR, UserUUR, UserEUR>
     {
     }
 }

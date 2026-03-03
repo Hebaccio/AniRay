@@ -15,7 +15,7 @@ using System.Threading;
 
 namespace AniRay.Services.Services
 {
-    public class MovieService : BaseCRUDService<MovieUM, MovieEM, MovieUSO, MovieESO, Movie, MovieIR, MovieIR, MovieUR, MovieUR>, IMovieService
+    public class MovieService : BaseCRUDService<MovieUM, MovieEM, MovieUSO, MovieESO, Movie, MovieUIR, MovieEIR, MovieUUR, MovieEUR>, IMovieService
     {
         private readonly ICurrentUserService _currentUser;
 
@@ -24,11 +24,18 @@ namespace AniRay.Services.Services
             _currentUser = currentUser;
         }
 
-
         #region Get By Id - For Users
         public override IQueryable<Movie> AddGetByIdFiltersForUsers(IQueryable<Movie> query)
         {
             query = query.Where(m => !m.IsDeleted).Include(x => x.MovieGenres).ThenInclude(x => x.Genre);
+            return query;
+        }
+        #endregion
+
+        #region Get By Id - For Employees
+        public override IQueryable<Movie> AddGetByIdFiltersForEmployees(IQueryable<Movie> query)
+        {
+            query = query.Include(x => x.MovieGenres).ThenInclude(x => x.Genre);
             return query;
         }
         #endregion
@@ -93,23 +100,7 @@ namespace AniRay.Services.Services
         }
         #endregion
 
-        #region Get By Id - For Employees
-        public override bool IsGetByIdForEmployeesAuthorized()
-        {
-            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
-        }
-        public override IQueryable<Movie> AddGetByIdFiltersForEmployees(IQueryable<Movie> query)
-        {
-            query = query.Include(x => x.MovieGenres).ThenInclude(x => x.Genre);
-            return query;
-        }
-        #endregion
-
         #region Get Paged - For Employees
-        public override bool IsGetPagedForEmployeesAuthorized()
-        {
-            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
-        }
         public override IQueryable<Movie> AddGetPagedFiltersForEmployees(MovieESO search, IQueryable<Movie> query)
         {
             if (search.IsDeleted != null)
@@ -121,19 +112,11 @@ namespace AniRay.Services.Services
         #endregion
 
         #region Insert - For Users
-        //No implementation as this function will not be added
-        #endregion
-
-        #region Update - For Users
-        //No implementation as this function will not be added
+        //Doesn't Exist
         #endregion
 
         #region Insert - For Employees
-        public override bool IsInsertForEmployeesAuthorized()
-        {
-            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
-        }
-        public override async Task<ServiceResult<bool>> BeforeInsertForEmployees(MovieIR request, Movie entity, CancellationToken cancellationToken)
+        public override async Task<ServiceResult<bool>> BeforeInsertForEmployees(MovieEIR request, Movie entity, CancellationToken cancellationToken)
         {
             var nullCheck = BeforeInsertNullCheck(request);
             if (!nullCheck.Success)
@@ -155,7 +138,7 @@ namespace AniRay.Services.Services
             return ServiceResult<bool>.Ok(true);
         }
 
-        private ServiceResult<bool> BeforeInsertNullCheck(MovieIR request)
+        private ServiceResult<bool> BeforeInsertNullCheck(MovieEIR request)
         {
             if (string.IsNullOrEmpty(request?.Image?.Trim()))
                 return ServiceResult<bool>.Fail("Image URL cannot be null");
@@ -170,7 +153,7 @@ namespace AniRay.Services.Services
 
             return ServiceResult<bool>.Ok(true);
         }
-        private ServiceResult<bool> BeforeInsertValidation(MovieIR request)
+        private ServiceResult<bool> BeforeInsertValidation(MovieEIR request)
         {
             if (request.Image.Length > 500)
                 return ServiceResult<bool>.Fail("Image URL cannot be longer than 500 characters");
@@ -185,7 +168,7 @@ namespace AniRay.Services.Services
 
             return ServiceResult<bool>.Ok(true);
         }
-        public async Task<bool> GenreCheck(MovieIR request, Movie entity, CancellationToken cancellationToken)
+        public async Task<bool> GenreCheck(MovieEIR request, Movie entity, CancellationToken cancellationToken)
         {
             if (request.GenreIds == null || !request.GenreIds.Any())
                 return true;
@@ -221,12 +204,12 @@ namespace AniRay.Services.Services
         }
         #endregion
 
+        #region Update - For Users
+        //Doesn't Exist
+        #endregion
+
         #region Update - For Employees
-        public override bool IsUpdateForEmployeesAuthorized()
-        {
-            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
-        }
-        public override async Task<ServiceResult<bool>> BeforeUpdateForEmployees(MovieUR request, Movie entity, CancellationToken cancellationToken)
+        public override async Task<ServiceResult<bool>> BeforeUpdateForEmployees(MovieEUR request, Movie entity, CancellationToken cancellationToken)
         {
             var nullCheck = BeforeUpdateNullCheck(request);
             if (!nullCheck.Success)
@@ -246,7 +229,7 @@ namespace AniRay.Services.Services
             return ServiceResult<bool>.Ok(true);
         }
 
-        private ServiceResult<bool> BeforeUpdateNullCheck(MovieUR request)
+        private ServiceResult<bool> BeforeUpdateNullCheck(MovieEUR request)
         {
             if (string.IsNullOrEmpty(request?.Image?.Trim()))
                 return ServiceResult<bool>.Fail("Image URL cannot be null");
@@ -261,7 +244,7 @@ namespace AniRay.Services.Services
 
             return ServiceResult<bool>.Ok(true);
         }
-        private ServiceResult<bool> BeforeUpdateValidation(MovieUR request)
+        private ServiceResult<bool> BeforeUpdateValidation(MovieEUR request)
         {
             if (request.Image.Length > 300)
                 return ServiceResult<bool>.Fail("Image URL cannot be longer than 300 characters");
@@ -302,14 +285,14 @@ namespace AniRay.Services.Services
         }
         #endregion
 
-        #region Soft Delete
-        public override bool IsSoftDeleteAuthorized(int id)
+        #region SoftDelete
+        public bool IsSoftDeleteAuthorized()
         {
             return _currentUser.IsAuthenticated && _currentUser.IsWorker();
         }
-        public override async Task<ActionResult<string>> SoftDelete(int id, CancellationToken cancellationToken)
+        public override async Task<ActionResult<string>> SoftDelete(int? id, CancellationToken cancellationToken)
         {
-            if(!IsSoftDeleteAuthorized(id))
+            if (!IsSoftDeleteAuthorized())
                 return new UnauthorizedResult();
 
             var entity = await Context.Set<Movie>().FindAsync(id, cancellationToken);

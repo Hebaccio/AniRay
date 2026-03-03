@@ -16,8 +16,8 @@ namespace AniRay.Services.Interfaces.BaseInterfaces
     {
         Task<ActionResult<TModelUser>> InsertEntityForUsers(TInsertUser request, CancellationToken cancellationToken);
         Task<ActionResult<TModelEmployee>> InsertEntityForEmployees(TInsertEmployee request, CancellationToken cancellationToken);
-        Task<ActionResult<TModelUser>> UpdateEntityForUsers(int id, TUpdateUser request, CancellationToken cancellationToken);
+        Task<ActionResult<TModelUser>> UpdateEntityForUsers(int? id, TUpdateUser request, CancellationToken cancellationToken);
         Task<ActionResult<TModelEmployee>> UpdateEntityForEmployees(int id, TUpdateEmployee request, CancellationToken cancellationToken);
-        Task<ActionResult<string>> SoftDelete(int id, CancellationToken cancellationToken);
+        Task<ActionResult<string>> SoftDelete(int? id, CancellationToken cancellationToken);
     }
 }

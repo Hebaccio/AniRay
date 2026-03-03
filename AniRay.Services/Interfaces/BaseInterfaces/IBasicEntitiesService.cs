@@ -13,7 +13,7 @@ namespace AniRay.Services.Interfaces
         ICRUDService<
             BaseClassUM, BaseClassEM, 
             BaseClassUSO, BaseClassESO, 
-            BaseClassIR, BaseClassIR, 
+            BaseClassUIR, BaseClassEIR, 
             BaseClassUUR, BaseClassEUR>
     {
 

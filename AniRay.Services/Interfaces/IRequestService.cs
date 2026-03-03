@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace AniRay.Services.Interfaces
 {
-    public interface IRequestService : ICRUDService<RequestUM, RequestUM, RequestUSO,  RequestESO, RequestUIR,  RequestUIR, RequestUUR,  RequestUUR>
+    public interface IRequestService : ICRUDService<RequestUM, RequestEM, RequestUSO, RequestESO, RequestUIR, RequestEIR, RequestUUR, RequestEUR>
     {
     }
 }

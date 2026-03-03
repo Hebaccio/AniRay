@@ -15,39 +15,14 @@ namespace AniRay.API.Controllers.EntityControllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class RequestController : BaseCRUDController<RequestUM, RequestUM, RequestUSO, RequestESO, Request, RequestUIR, RequestUIR, RequestUUR, RequestUUR>
+    public class RequestController : BaseCRUDController<RequestUM, RequestEM, RequestUSO, RequestESO, Request, RequestUIR, RequestEIR, RequestUUR, RequestEUR>
     {
         public RequestController(IRequestService Service) : base(Service) { }
 
-
         [NonAction]
-        public override Task<ActionResult<RequestUM>> InsertEntityForEmployees(RequestUIR request, CancellationToken cancellationToken)
+        public override async Task<ActionResult<RequestEM>> InsertEntityForEmployees(RequestEIR request, CancellationToken cancellationToken)
         {
-            return base.InsertEntityForEmployees(request, cancellationToken);
-        }
-
-        [NonAction]
-        public override Task<ActionResult<RequestUM>> UpdateEntityForEmployees(int id, RequestUUR request, CancellationToken cancellationToken)
-        {
-            return base.UpdateEntityForEmployees(id, request, cancellationToken);
-        }
-
-        [NonAction]
-        public override Task<ActionResult<string>> SoftDelete(int id, CancellationToken cancellationToken)
-        {
-            return base.SoftDelete(id, cancellationToken);
-        }
-
-        [Authorize(Roles = "User")]
-        public override async Task<ActionResult<RequestUM>> EntityGetByIdForUsers(int id, CancellationToken cancellationToken)
-        {
-            return await _service.EntityGetByIdForUsers(id, cancellationToken);
-        }
-
-        [Authorize (Roles = "User")]
-        public override async Task<ActionResult<PagedResult<RequestUM>>> GetPagedEntityForUsers([FromQuery] RequestUSO searchObject, CancellationToken cancellationToken)
-        {
-            return await _service.GetPagedEntityForUsers(searchObject, cancellationToken);
+            return await base.InsertEntityForEmployees(request, cancellationToken);
         }
 
         [NonAction]
@@ -55,5 +30,18 @@ namespace AniRay.API.Controllers.EntityControllers
         {
             return await base.UpdateEntityForUsers(id, request, cancellationToken);
         }
+
+        [NonAction]
+        public override async Task<ActionResult<RequestEM>> UpdateEntityForEmployees(int id, RequestEUR request, CancellationToken cancellationToken)
+        {
+            return await base.UpdateEntityForEmployees(id, request, cancellationToken);
+        }
+
+        [NonAction]
+        public override async Task<ActionResult<string>> SoftDelete(int id, CancellationToken cancellationToken)
+        {
+            return await base.SoftDelete(id, cancellationToken);
+        }
+        
     }
 }

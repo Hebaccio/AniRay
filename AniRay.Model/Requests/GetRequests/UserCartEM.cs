@@ -6,10 +6,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AniRay.Model.Requests.InsertRequests
+namespace AniRay.Model.Requests.GetRequests
 {
-    public class UserCartIR
+    public class UserCartEM
     {
-        public int UserId { get; set; }
+        
     }
 }

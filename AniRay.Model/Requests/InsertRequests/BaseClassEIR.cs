@@ -5,7 +5,7 @@ using System.Text;
 
 namespace AniRay.Model.Requests.InsertRequests
 {
-    public class BaseClassIR
+    public class BaseClassEIR
     {
         [Required(ErrorMessage = "You must provide a name")]
         public string Name { get; set; }

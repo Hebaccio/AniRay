@@ -21,7 +21,7 @@ using System.Threading.Tasks;
 namespace AniRay.Services.Services
 {
     public class UserFavoritesService :
-        BaseCRUDService<UserFavoritesM, UserFavoritesM, UserFavoritesSO, UserFavoritesSO, UserFavorites, UserFavoritesIR, UserFavoritesIR, UserFavoritesUR, UserFavoritesUR>,
+        BaseCRUDService<UserFavoritesUM, UserFavoritesEM, UserFavoritesUSO, UserFavoritesESO, UserFavorites, UserFavoritesUIR, UserFavoritesEIR, UserFavoritesUUR, UserFavoritesEUR>,
         IUserFavoritesService
     {
         private readonly ICurrentUserService _currentUser;
@@ -30,15 +30,45 @@ namespace AniRay.Services.Services
             _currentUser = currentUser;
         }
 
+        #region Get By Id - For Users
+        //Doesn't Exist
+        #endregion
+
+        #region Get By Id - For Employees
+        //Doesn't Exist
+        #endregion
+
+        #region Get Paged - For Users
+        public override bool IsGetPagedForUsersAuthorized()
+        {
+            return _currentUser.IsAuthenticated && _currentUser.IsUser();
+        }
+        public override IQueryable<UserFavorites> AddGetPagedFiltersForUsers(UserFavoritesUSO search, IQueryable<UserFavorites> query)
+        {
+            query = query.Where(uf => uf.UserId == _currentUser.UserId);
+            query = query.Include(uf => uf.Movie);
+            return query;
+        }
+        #endregion
+
+        #region Get Paged - For Employees
+        public override IQueryable<UserFavorites> AddGetPagedFiltersForEmployees(UserFavoritesESO search, IQueryable<UserFavorites> query)
+        {
+            query = query.Where(uf => uf.UserId == search.UserId);
+            query = query.Include(uf => uf.Movie);
+            return query;
+        }
+        #endregion
+
         #region Insert - For Users
         public override bool IsInsertForUsersAuthorized()
         {
             return _currentUser.IsAuthenticated && _currentUser.IsUser();
         }
-        public override async Task<ServiceResult<bool>> BeforeInsertForUsers(UserFavoritesIR request, UserFavorites entity, CancellationToken cancellationToken)
+        public override async Task<ServiceResult<bool>> BeforeInsertForUsers(UserFavoritesUIR request, UserFavorites entity, CancellationToken cancellationToken)
         {
-            var AllEntities = await Context.Set<UserFavorites>().Where(uf=> uf.UserId == _currentUser.UserId).ToListAsync(cancellationToken);
-            if(AllEntities.Count >=10)
+            var AllEntities = await Context.Set<UserFavorites>().Where(uf => uf.UserId == _currentUser.UserId).ToListAsync(cancellationToken);
+            if (AllEntities.Count >= 10)
                 return ServiceResult<bool>.Fail("User can only have 10 favorite movies");
 
             bool alreadyExists = AllEntities.Any(uf => uf.MovieId == request.MovieId);
@@ -56,7 +86,7 @@ namespace AniRay.Services.Services
 
             return ServiceResult<bool>.Ok(true);
         }
-        private async Task<ServiceResult<bool>> ValidateForeignKeys(UserFavoritesIR request, CancellationToken cancellationToken)
+        private async Task<ServiceResult<bool>> ValidateForeignKeys(UserFavoritesUIR request, CancellationToken cancellationToken)
         {
             bool userExists = await Context.Set<User>().AnyAsync(x => x.Id == _currentUser.UserId, cancellationToken);
             if (!userExists)
@@ -69,32 +99,23 @@ namespace AniRay.Services.Services
             return ServiceResult<bool>.Ok(true);
         }
         #endregion
-        
+
+        #region Insert - For Employees
+        //Doesn't Exist
+        #endregion
+
         #region Update - For Users
-        public override bool IsUpdateForUsersAuthorized(int? id)
+        public override bool IsUpdateForUsersAuthorized()
         {
             return _currentUser.IsAuthenticated && _currentUser.IsUser();
         }
-        public override async Task<ActionResult<UserFavoritesM>> UpdateEntityForUsers(int id, UserFavoritesUR request, CancellationToken cancellationToken)
+        public override async Task<UserFavorites?> EntityGetTriggerForUpdate(int? id, UserFavoritesUUR? request, CancellationToken cancellationToken)
         {
-            if (!IsUpdateForUsersAuthorized(_currentUser.UserId))
-                return new UnauthorizedResult();
-
-            var entity = await Context.Set<UserFavorites>().Where(uf => uf.UserId == _currentUser.UserId).ToListAsync(cancellationToken);
-
-            var validationResult = await BeforeUpdateForUsers(request, entity, cancellationToken);
-            if (!validationResult.Success)
-                return new BadRequestObjectResult(new { message = validationResult.Message });
-
-            await Context.SaveChangesAsync(cancellationToken);
-
-            var mapped = Mapper.Map<UserFavoritesM>(entity);
-            return new OkObjectResult(mapped);
+            return await Context.Set<UserFavorites>().FirstOrDefaultAsync(x => x.UserId == _currentUser.UserId, cancellationToken);
         }
-        private async Task<ServiceResult<bool>> BeforeUpdateForUsers(UserFavoritesUR request, List<UserFavorites> entity, CancellationToken cancellationToken)
+        public override async Task<ServiceResult<bool>> BeforeUpdateForUsers(UserFavoritesUUR request, UserFavorites entity, CancellationToken cancellationToken)
         {
-            var requestedIds = request.MovieId?.ToList() ?? new List<int>();
-            requestedIds = requestedIds.Distinct().ToList();
+            var requestedIds = request.MovieId?.Distinct().ToList() ?? new List<int>();
 
             if (requestedIds.Count > 10)
                 return ServiceResult<bool>.Fail("Maximum number of favorites is 10.");
@@ -103,43 +124,56 @@ namespace AniRay.Services.Services
             if (!validationCheck.Success)
                 return validationCheck;
 
-            var currentMovieIds = entity.Select(x => x.MovieId).ToHashSet();
+            var userId = _currentUser.UserId.Value;
+
+            var existingFavorites = await Context.Set<UserFavorites>().Where(x => x.UserId == userId).ToListAsync(cancellationToken);
+
+            var currentMovieIds = existingFavorites.Select(x => x.MovieId).ToHashSet();
             var requestedSet = requestedIds.ToHashSet();
 
-            var toRemove = entity.Where(x => !requestedSet.Contains(x.MovieId)).ToList();
+            var toRemove = existingFavorites.Where(x => !requestedSet.Contains(x.MovieId)).ToList();
+
             if (toRemove.Any())
             {
                 var removedMovieIds = toRemove.Select(x => x.MovieId).ToList();
-                var moviesToDecrement = await Context.Set<Movie>().Where(m => removedMovieIds.Contains(m.Id)).ToListAsync(cancellationToken);
+
+                var moviesToDecrement = await Context.Set<Movie>()
+                    .Where(m => removedMovieIds.Contains(m.Id))
+                    .ToListAsync(cancellationToken);
+
                 foreach (var movie in moviesToDecrement)
-                {
                     movie.Favorites = Math.Max(0, movie.Favorites - 1);
-                }
+
                 Context.Set<UserFavorites>().RemoveRange(toRemove);
             }
 
-            var userId = _currentUser.UserId.Value;
-            var toAdd = requestedIds.Where(id => !currentMovieIds.Contains(id)).Select(id => new UserFavorites { UserId = userId, MovieId = id }).ToList();
+            var toAdd = requestedIds.Where(id => !currentMovieIds.Contains(id))
+                .Select(id => new UserFavorites
+                {
+                    UserId = userId,
+                    MovieId = id
+                }).ToList();
+
             if (toAdd.Any())
             {
-                await Context.Set<UserFavorites>().AddRangeAsync(toAdd, cancellationToken);
+                await Context.Set<UserFavorites>()
+                    .AddRangeAsync(toAdd, cancellationToken);
+
                 var addedMovieIds = toAdd.Select(x => x.MovieId).ToList();
+
                 var moviesToIncrement = await Context.Set<Movie>()
                     .Where(m => addedMovieIds.Contains(m.Id))
                     .ToListAsync(cancellationToken);
 
                 foreach (var movie in moviesToIncrement)
-                {
                     movie.Favorites += 1;
-                }
             }
 
             return ServiceResult<bool>.Ok(true);
         }
         private async Task<ServiceResult<bool>> ValidateForeignKeysForUpdate(List<int> requestedIds, CancellationToken cancellationToken)
         {
-            var userExists = await Context.Set<User>()
-                .AnyAsync(x => x.Id == _currentUser.UserId, cancellationToken);
+            var userExists = await Context.Set<User>().AnyAsync(x => x.Id == _currentUser.UserId, cancellationToken);
 
             if (!userExists)
                 return ServiceResult<bool>.Fail("User does not exist.");
@@ -147,10 +181,7 @@ namespace AniRay.Services.Services
             if (!requestedIds.Any())
                 return ServiceResult<bool>.Ok(true);
 
-            var existingMovieIds = await Context.Set<Movie>()
-                .Where(x => requestedIds.Contains(x.Id))
-                .Select(x => x.Id)
-                .ToListAsync(cancellationToken);
+            var existingMovieIds = await Context.Set<Movie>().Where(x => requestedIds.Contains(x.Id)).Select(x => x.Id).ToListAsync(cancellationToken);
 
             if (existingMovieIds.Count != requestedIds.Count)
                 return ServiceResult<bool>.Fail("Some movies do not exist.");
@@ -158,31 +189,14 @@ namespace AniRay.Services.Services
             return ServiceResult<bool>.Ok(true);
         }
         #endregion
-        
-        #region Get Paged - Users
-        public override bool IsGetPagedForUsersAuthorized()
-        {
-            return _currentUser.IsAuthenticated && _currentUser.IsUser();
-        }
-        public override IQueryable<UserFavorites> AddGetPagedFiltersForUsers(UserFavoritesSO search, IQueryable<UserFavorites> query)
-        {
-            query = query.Where(uf=> uf.UserId == _currentUser.UserId);
-            query = query.Include(uf => uf.Movie);
-            return query;
-        }
+
+        #region Update - For Employees
+        //Doesn't Exist
         #endregion
-        
-        #region Get Paged - Employees
-        public override bool IsGetPagedForEmployeesAuthorized()
-        {
-            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
-        }
-        public override IQueryable<UserFavorites> AddGetPagedFiltersForEmployees(UserFavoritesSO search, IQueryable<UserFavorites> query)
-        {
-            query = query.Where(uf => uf.UserId == search.UserId);
-            query = query.Include(uf => uf.Movie);
-            return query;
-        }
+
+        #region SoftDelete
+        //Doesn't Exist
         #endregion
+
     }
 }

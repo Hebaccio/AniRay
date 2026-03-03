@@ -29,32 +29,32 @@ namespace AniRay.Services.Services.BaseServices
         }
 
         #region Get By Id - For Users
-        public virtual async Task<ActionResult<TModelUser>> EntityGetByIdForUsers(int id, CancellationToken cancellationToken)
+        public virtual async Task<ActionResult<TModelUser>> EntityGetByIdForUsers(int? id, CancellationToken cancellationToken)
         {
-            if (!IsGetByIdForUsersAuthorized(id))
+            if (!IsGetByIdForUsersAuthorized())
                 return new UnauthorizedResult();
+
             IQueryable<TDbEntity> query = Context.Set<TDbEntity>().AsQueryable();
             query = AddGetByIdFiltersForUsers(query);
 
-            var entity = await query.FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == id, cancellationToken);
-
+            var entity = await EntityGetTrigger(id, query, cancellationToken);
             if (entity == null)
                 return new NotFoundObjectResult(new { message = $"Entity with ID {id} not found." });
 
             var mapped = Mapper.Map<TModelUser>(entity);
-
             return new OkObjectResult(mapped);
-
         }
-
-        public virtual bool IsGetByIdForUsersAuthorized(int? id)
+        public virtual bool IsGetByIdForUsersAuthorized()
         {
             return true;
         }
-
         public virtual IQueryable<TDbEntity> AddGetByIdFiltersForUsers(IQueryable<TDbEntity> query)
         {
             return query;
+        }
+        public virtual async Task<TDbEntity?> EntityGetTrigger(int? id, IQueryable<TDbEntity> query, CancellationToken cancellationToken)
+        {
+            return await query.FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == id, cancellationToken);
         }
         #endregion
 
@@ -84,12 +84,10 @@ namespace AniRay.Services.Services.BaseServices
 
             return new OkObjectResult(pagedResult);
         }
-
         public virtual bool IsGetPagedForUsersAuthorized()
         {
             return true;
         }
-
         public virtual IQueryable<TDbEntity> AddGetPagedFiltersForUsers(TSearchUser search, IQueryable<TDbEntity> query)
         {
             return query;
@@ -114,12 +112,10 @@ namespace AniRay.Services.Services.BaseServices
 
             return new OkObjectResult(mapped);
         }
-
         public virtual bool IsGetByIdForEmployeesAuthorized()
         {
-            return true;
+            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
         }
-
         public virtual IQueryable<TDbEntity> AddGetByIdFiltersForEmployees(IQueryable<TDbEntity> query)
         {
             return query;
@@ -152,12 +148,10 @@ namespace AniRay.Services.Services.BaseServices
 
             return new OkObjectResult(pagedResult);
         }
-
         public virtual bool IsGetPagedForEmployeesAuthorized()
         {
-            return true;
+            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
         }
-
         public virtual IQueryable<TDbEntity> AddGetPagedFiltersForEmployees(TSearchEmployee search, IQueryable<TDbEntity> query)
         {
             return query;

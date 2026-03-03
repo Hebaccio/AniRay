@@ -6,9 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AniRay.Model.Requests.UpdateRequests
+namespace AniRay.Model.Requests.InsertRequests
 {
-    public class BluRayUR
+    public class BluRayEIR
     {
         public int MovieId { get; set; }
         public string Image { get; set; }
@@ -21,6 +21,5 @@ namespace AniRay.Model.Requests.UpdateRequests
         public int Runtime { get; set; }
         public int InStock { get; set; }
         public decimal Price { get; set; }
-        public bool IsDeleted { get; set; }
     }
 }

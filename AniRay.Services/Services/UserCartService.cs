@@ -15,11 +15,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace AniRay.Services.Services
 {
     public class UserCartService :
-        BaseCRUDService<UserCartUM, UserCartUM, BaseSO, BaseSO, UserCart, UserCartIR, UserCartIR, UserCartUR, UserCartUR>, IUserCartService
+        BaseCRUDService<UserCartUM, UserCartEM, BaseSO, BaseSO, UserCart, UserCartUIR, UserCartEIR, UserCartUUR, UserCartEUR>, IUserCartService
     {
         private readonly ICurrentUserService _currentUser;
         public UserCartService(AniRayDbContext context, IMapper mapper, ICurrentUserService currentUser) : base (context, mapper, currentUser)
@@ -27,8 +28,36 @@ namespace AniRay.Services.Services
             _currentUser = currentUser;
         }
 
-        #region Insert - For User
-        public override async Task<ServiceResult<bool>> BeforeInsertForUsers(UserCartIR request, UserCart entity, CancellationToken cancellationToken)
+        #region Get By Id - For Users
+        public override bool IsGetByIdForUsersAuthorized()
+        {
+            return _currentUser.IsAuthenticated && _currentUser.IsUser();
+        }
+        public override IQueryable<UserCart> AddGetByIdFiltersForUsers(IQueryable<UserCart> query)
+        {
+            query = query.Include(uc => uc.BluRay).ThenInclude(ucb => ucb.BluRay);
+            return query;
+        }
+        public override async Task<UserCart?> EntityGetTrigger(int? id, IQueryable<UserCart> query, CancellationToken cancellationToken)
+        {
+            return await query.FirstOrDefaultAsync(e => EF.Property<int>(e, "UserId") == _currentUser.UserId, cancellationToken);
+        }
+        #endregion
+
+        #region Get By Id - For Employees
+        //Doesn't Exist
+        #endregion
+
+        #region Get Paged - For Users
+        //Doesn't Exist
+        #endregion
+
+        #region Get Paged - For Employees
+        //Doesn't Exist
+        #endregion
+
+        #region Insert - For Users
+        public override async Task<ServiceResult<bool>> BeforeInsertForUsers(UserCartUIR request, UserCart entity, CancellationToken cancellationToken)
         {
             entity.UserId = request.UserId;
             entity.FullCartPrice = 0;
@@ -38,61 +67,20 @@ namespace AniRay.Services.Services
         }
         #endregion
 
-        #region Get By Id - For User
-        public override bool IsGetByIdForUsersAuthorized(int? id)
-        {
-            return _currentUser.IsAuthenticated && (_currentUser.IsUser() && _currentUser.IsSelf(id.Value));
-        }
-        public override async Task<ActionResult<UserCartUM>> EntityGetByIdForUsers(int id, CancellationToken cancellationToken)
-        {
-            if (!IsGetByIdForUsersAuthorized(id))
-                return new UnauthorizedResult();
-            IQueryable<UserCart> query = Context.Set<UserCart>().AsQueryable();
-            query = AddGetByIdFiltersForUsers(query);
-
-            var entity = await query.FirstOrDefaultAsync(e => EF.Property<int>(e, "UserId") == id, cancellationToken);
-
-            if (entity == null)
-                return new NotFoundObjectResult(new { message = $"UserCart for user with {id} not found." });
-
-            var mapped = Mapper.Map<UserCartUM>(entity);
-
-            return new OkObjectResult(mapped);
-        }
-        public override IQueryable<UserCart> AddGetByIdFiltersForUsers(IQueryable<UserCart> query)
-        {
-            query = query.Include(uc => uc.BluRay).ThenInclude(ucb=> ucb.BluRay);
-            return query;
-        }
+        #region Insert - For Employees
+        //Doesn't Exist
         #endregion
 
         #region Update - For Users
-        public override bool IsUpdateForUsersAuthorized(int? id)
+        public override bool IsUpdateForUsersAuthorized()
         {
-            return _currentUser.IsAuthenticated && (_currentUser.IsUser() && _currentUser.IsSelf(id.Value));
+            return _currentUser.IsAuthenticated && _currentUser.IsUser();
         }
-        public override async Task<ActionResult<UserCartUM>> UpdateEntityForUsers(int id, UserCartUR request, CancellationToken cancellationToken)
+        public override async Task<UserCart?> EntityGetTriggerForUpdate(int? id, UserCartUUR? request, CancellationToken cancellationToken)
         {
-            var set = Context.Set<UserCart>();
-            var entity = await set.FindAsync(id, cancellationToken);
-            if (entity == null)
-                return new NotFoundObjectResult(new { message = "Entity not found." });
-            
-            if (!IsUpdateForUsersAuthorized(entity.UserId))
-                return new UnauthorizedResult();
-
-            var validationResult = await BeforeUpdateForUsers(request, entity, cancellationToken);
-            if (!validationResult.Success)
-                return new BadRequestObjectResult(new { message = validationResult.Message });
-
-            Mapper.Map(request, entity);
-            await Context.SaveChangesAsync(cancellationToken);
-
-            var mapped = Mapper.Map<UserCartUM>(entity);
-            return new OkObjectResult(mapped);
+            return await Context.Set<UserCart>().FirstOrDefaultAsync(e => EF.Property<int>(e, "UserId") == _currentUser.UserId, cancellationToken);
         }
-
-        public override async Task<ServiceResult<bool>> BeforeUpdateForUsers(UserCartUR request, UserCart entity, CancellationToken cancellationToken)
+        public override async Task<ServiceResult<bool>> BeforeUpdateForUsers(UserCartUUR request, UserCart entity, CancellationToken cancellationToken)
         {
             var validationResult = ValidateRequest(request);
             if (!validationResult.Success) return validationResult;
@@ -110,7 +98,7 @@ namespace AniRay.Services.Services
             return ServiceResult<bool>.Ok(true);
         }
 
-        private ServiceResult<bool> ValidateRequest(UserCartUR request)
+        private ServiceResult<bool> ValidateRequest(UserCartUUR request)
         {
             if (request.CartNotes == null)
                 return ServiceResult<bool>.Fail("Cart notes cannot be null.");
@@ -152,24 +140,27 @@ namespace AniRay.Services.Services
             if (existingBluRays.Count != requestedIds.Count)
                 return ServiceResult<bool>.Fail("Some BluRay Ids cannot be found in the database.");
 
-            /*foreach (var item in items)
-            {
-                var bluRay = existingBluRays.First(b => b.Id == item.BluRayId);
-                if (item.Amount > bluRay.InStock)
-                    return ServiceResult<bool>.Fail(
-                        $"Requested amount ({item.Amount}) for BluRay '{bluRay.Title}' exceeds available stock ({bluRay.InStock})."
-                    );
-            }*/
-
             return ServiceResult<bool>.Ok(true);
         }
         private async Task SyncCartItems(UserCart entity, List<BluRayCartUR> mergedItems, CancellationToken cancellationToken)
         {
             await Context.Entry(entity).Collection(c => c.BluRay).LoadAsync(cancellationToken);
 
-            var existingCartItems = entity.BluRay.ToList();
-            var existingDict = existingCartItems.ToDictionary(x => x.BluRayId, x => x);
-            var requestDict = mergedItems.ToDictionary(x => x.BluRayId, x => x);
+            var duplicateGroups = entity.BluRay.GroupBy(x => x.BluRayId).Where(g => g.Count() > 1).ToList();
+            foreach (var group in duplicateGroups)
+            {
+                var first = group.First();
+                var duplicates = group.Skip(1).ToList();
+
+                foreach (var duplicate in duplicates)
+                {
+                    Context.Set<BluRayCart>().Remove(duplicate);
+                }
+            }
+
+            var existingCartItems = entity.BluRay.GroupBy(x => x.BluRayId).Select(g => g.First()).ToList();
+            var existingDict = existingCartItems.ToDictionary(x => x.BluRayId);
+            var requestDict = mergedItems.ToDictionary(x => x.BluRayId);
 
             foreach (var item in existingCartItems.Where(x => !requestDict.ContainsKey(x.BluRayId)).ToList())
                 Context.Set<BluRayCart>().Remove(item);
@@ -189,20 +180,22 @@ namespace AniRay.Services.Services
                     item.Amount = newAmount;
             }
 
-            await Context.SaveChangesAsync(cancellationToken);
+            //await Context.SaveChangesAsync(cancellationToken);
         }
         private async Task RecalculateCartPrice(UserCart entity, CancellationToken cancellationToken)
         {
-            await Context.Entry(entity)
-                .Collection(c => c.BluRay)
-                .Query()
-                .Include(x => x.BluRay)
-                .LoadAsync(cancellationToken);
-
+            await Context.Entry(entity).Collection(c => c.BluRay).Query().Include(x => x.BluRay).LoadAsync(cancellationToken);
             entity.FullCartPrice = entity.BluRay.Sum(x => x.Amount * x.BluRay.Price);
         }
         #endregion
 
+        #region Update - For Employees
+        //Doesn't Exist
+        #endregion
+
+        #region SoftDelete
+        //Doesn't Exist
+        #endregion
 
     }
 }

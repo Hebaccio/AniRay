@@ -25,6 +25,13 @@ namespace AniRay.API.Controllers.BaseControllers
             return await _service.EntityGetByIdForUsers(id, cancellationToken);
         }
 
+        [HttpGet("EntityGetById/ForUsers")]
+        [NonAction]
+        public virtual async Task<ActionResult<TModelUser>> EntityGetByIdForUsers(CancellationToken cancellationToken)
+        {
+            return await _service.EntityGetByIdForUsers(null, cancellationToken);
+        }
+
         [HttpGet("GetPagedEntity/ForUsers")]
         public virtual async Task<ActionResult<PagedResult<TModelUser>>> GetPagedEntityForUsers([FromQuery] TSearchUser searchObject, CancellationToken cancellationToken)
         {

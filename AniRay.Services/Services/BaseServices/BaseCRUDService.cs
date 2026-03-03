@@ -5,6 +5,8 @@ using AniRay.Services.Interfaces;
 using AniRay.Services.Interfaces.BaseInterfaces;
 using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace AniRay.Services.Services.BaseServices
 {
@@ -72,7 +74,7 @@ namespace AniRay.Services.Services.BaseServices
         }
         public virtual bool IsInsertForEmployeesAuthorized()
         {
-            return true;
+            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
         }
         public virtual async Task<ServiceResult<bool>> BeforeInsertForEmployees(TInsertEmployee request, TDbEntity entity, CancellationToken cancellationToken)
         {
@@ -81,14 +83,12 @@ namespace AniRay.Services.Services.BaseServices
         #endregion
 
         #region Update - For Users
-        public virtual async Task<ActionResult<TModelUser>> UpdateEntityForUsers(int id, TUpdateUser request, CancellationToken cancellationToken)
+        public virtual async Task<ActionResult<TModelUser>> UpdateEntityForUsers(int? id, TUpdateUser request, CancellationToken cancellationToken)
         {
-            if(!IsUpdateForUsersAuthorized(id))
+            if(!IsUpdateForUsersAuthorized())
                 return new UnauthorizedResult();
 
-            var set = Context.Set<TDbEntity>();
-            var entity = await set.FindAsync(id, cancellationToken);
-
+            var entity = await EntityGetTriggerForUpdate(id, request, cancellationToken);
             if (entity == null)
                 return new NotFoundObjectResult(new { message = "Entity not found." });
 
@@ -103,9 +103,13 @@ namespace AniRay.Services.Services.BaseServices
             var mapped = Mapper.Map<TModelUser>(entity);
             return new OkObjectResult(mapped);
         }
-        public virtual bool IsUpdateForUsersAuthorized(int? id)
+        public virtual bool IsUpdateForUsersAuthorized()
         {
             return true;
+        }
+        public virtual async Task<TDbEntity?> EntityGetTriggerForUpdate(int? id, TUpdateUser? request, CancellationToken cancellationToken)
+        {
+            return await Context.Set<TDbEntity>().FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == id, cancellationToken);
         }
         public virtual async Task<ServiceResult<bool>> BeforeUpdateForUsers(TUpdateUser request, TDbEntity entity, CancellationToken cancellationToken)
         {
@@ -138,7 +142,7 @@ namespace AniRay.Services.Services.BaseServices
         }
         public virtual bool IsUpdateForEmployeesAuthorized()
         {
-            return true;
+            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
         }
         public virtual async Task<ServiceResult<bool>> BeforeUpdateForEmployees(TUpdateEmployee request, TDbEntity entity, CancellationToken cancellationToken)
         {
@@ -147,13 +151,9 @@ namespace AniRay.Services.Services.BaseServices
         #endregion
 
         #region Soft Delete
-        public virtual async Task<ActionResult<string>> SoftDelete(int id, CancellationToken cancellationToken)
+        public virtual async Task<ActionResult<string>> SoftDelete(int? id, CancellationToken cancellationToken)
         {
             return new ConflictObjectResult(new { message = "This entity cannot be deleted." } );
-        }
-        public virtual bool IsSoftDeleteAuthorized(int id)
-        {
-            return true;
         }
         #endregion
 

@@ -1,4 +1,5 @@
-﻿using AniRay.Model.Requests.GetRequests;
+﻿using AniRay.Model.Entities;
+using AniRay.Model.Requests.GetRequests;
 using AniRay.Model.Requests.InsertRequests;
 using AniRay.Model.Requests.SearchRequests;
 using AniRay.Model.Requests.UpdateRequests;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 namespace AniRay.Services.Interfaces
 {
     public interface IMovieService :
-        ICRUDService<MovieUM, MovieEM, MovieUSO, MovieESO, MovieIR, MovieIR, MovieUR, MovieUR>
+        ICRUDService<MovieUM, MovieEM, MovieUSO, MovieESO, MovieUIR, MovieEIR, MovieUUR, MovieEUR>
     {
     }
 }

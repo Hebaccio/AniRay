@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace AniRay.Model.Requests.InsertRequests
 {
-    public class UserIR
+    public class UserUIR
     {
         public string Pfp { get; set; }
         public string Username { get; set; }

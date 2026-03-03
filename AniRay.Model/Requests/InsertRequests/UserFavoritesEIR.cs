@@ -8,9 +8,8 @@ using System.Threading.Tasks;
 
 namespace AniRay.Model.Requests.InsertRequests
 {
-    public class UserFavoritesIR
+    public class UserFavoritesEIR
     {
-        public int UserId { get; set; }
-        public int MovieId { get; set; }
+
     }
 }

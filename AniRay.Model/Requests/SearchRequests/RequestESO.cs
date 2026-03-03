@@ -13,5 +13,12 @@ namespace AniRay.Model.Requests.SearchRequests
         public DateTime? DateTimeLTE { get; set; }
         public string? UserFullNameFTS { get; set; }
         public string? UserMailFTS { get; set; }
+        public RequestSortField? OrderBy { get; set; }
+        public SortType? SortType { get; set; }
+    }
+
+    public enum RequestSortField
+    {
+        DateTime,
     }
 }

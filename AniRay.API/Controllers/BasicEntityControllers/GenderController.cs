@@ -15,8 +15,7 @@ namespace AniRay.API.Controllers.BasicEntityControllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class GenderController : BaseCRUDController<BaseClassUM, BaseClassEM, BaseClassUSO, BaseClassESO, Gender,
-        BaseClassIR, BaseClassIR, BaseClassUUR, BaseClassEUR>
+    public class GenderController : BasicEntityController<Gender>
     {
         public GenderController(IGenderService service)
             : base(service)
@@ -30,13 +29,7 @@ namespace AniRay.API.Controllers.BasicEntityControllers
         }
 
         [NonAction]
-        public override async Task<ActionResult<BaseClassEM>> EntityGetByIdForEmployees(int id, CancellationToken cancellationToken)
-        {
-            return await base.EntityGetByIdForEmployees(id, cancellationToken);
-        }
-
-        [NonAction]
-        public override async Task<ActionResult<BaseClassEM>> InsertEntityForEmployees(BaseClassIR request, CancellationToken cancellationToken)
+        public override async Task<ActionResult<BaseClassEM>> InsertEntityForEmployees(BaseClassEIR request, CancellationToken cancellationToken)
         {
             return await base.InsertEntityForEmployees(request, cancellationToken);
         }
@@ -51,24 +44,6 @@ namespace AniRay.API.Controllers.BasicEntityControllers
         public override async Task<ActionResult<string>> SoftDelete(int id, CancellationToken cancellationToken)
         {
             return await base.SoftDelete(id, cancellationToken);
-        }
-
-        [NonAction]
-        public override async Task<ActionResult<BaseClassUM>> EntityGetByIdForUsers(int id, CancellationToken cancellationToken)
-        {
-            return await base.EntityGetByIdForUsers(id, cancellationToken);
-        }
-
-        [NonAction]
-        public override async Task<ActionResult<BaseClassUM>> InsertEntityForUsers(BaseClassIR request, CancellationToken cancellationToken)
-        {
-            return await base.InsertEntityForUsers(request, cancellationToken);
-        }
-
-        [NonAction]
-        public override async Task<ActionResult<BaseClassUM>> UpdateEntityForUsers(int id, BaseClassUUR request, CancellationToken cancellationToken)
-        {
-            return await base.UpdateEntityForUsers(id, request, cancellationToken);
         }
 
     }

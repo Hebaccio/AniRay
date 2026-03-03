@@ -11,7 +11,7 @@ namespace AniRay.Services.Interfaces.BaseInterfaces
         where TSearchUser : BaseSO
         where TSearchEmployee : BaseSO
     {
-        public Task<ActionResult<TModelUser>> EntityGetByIdForUsers(int id, CancellationToken cancellationToken);
+        public Task<ActionResult<TModelUser>> EntityGetByIdForUsers(int? id, CancellationToken cancellationToken);
         public Task<ActionResult<PagedResult<TModelUser>>> GetPagedEntityForUsers(TSearchUser search, CancellationToken cancellationToken);
         public Task<ActionResult<TModelEmployee>> EntityGetByIdForEmployees(int id, CancellationToken cancellationToken);
         public Task<ActionResult<PagedResult<TModelEmployee>>> GetPagedEntityForEmployees(TSearchEmployee search, CancellationToken cancellationToken);

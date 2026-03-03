@@ -7,7 +7,7 @@ namespace AniRay.Model.Requests.UpdateRequests
 {
     public class BaseClassUUR
     {
-        [Required(ErrorMessage = "You must provide a name")]
-        public string Name { get; set; }
+        //[Required(ErrorMessage = "You must provide a name")]
+        //public string Name { get; set; }
     }
 }

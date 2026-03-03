@@ -16,45 +16,64 @@ namespace AniRay.API.Controllers.EntityControllers
     [ApiController]
     [Route("[controller]")]
     public class UserFavoritesController : 
-        BaseCRUDController<UserFavoritesM, UserFavoritesM, UserFavoritesSO, UserFavoritesSO, UserFavorites, UserFavoritesIR, UserFavoritesIR, UserFavoritesUR, UserFavoritesUR>
+        BaseCRUDController<UserFavoritesUM, UserFavoritesEM, UserFavoritesUSO, UserFavoritesESO, UserFavorites, UserFavoritesUIR, UserFavoritesEIR, UserFavoritesUUR, UserFavoritesEUR>
     {
         public UserFavoritesController(IUserFavoritesService Service) : base(Service) { }
 
+        [Authorize(Roles = "User")]
+        public override async Task<ActionResult<UserFavoritesUM>> InsertEntityForUsers(UserFavoritesUIR request, CancellationToken cancellationToken)
+        {
+            return await base.InsertEntityForUsers(request, cancellationToken);
+        }
+
+        [HttpPut("UpdateEntity/ForUsers")]
+        [Authorize(Roles = "User")]
+        public new async Task<ActionResult<UserFavoritesUM>> UpdateEntityForUsers(UserFavoritesUUR request, CancellationToken cancellationToken)
+        {
+            return await base.UpdateEntityForUsers(request, cancellationToken);
+        }
 
         [Authorize(Roles = "User")]
-        public override async Task<ActionResult<PagedResult<UserFavoritesM>>> GetPagedEntityForUsers([FromQuery] UserFavoritesSO searchObject, CancellationToken cancellationToken)
+        public override async Task<ActionResult<PagedResult<UserFavoritesUM>>> GetPagedEntityForUsers([FromQuery] UserFavoritesUSO searchObject, CancellationToken cancellationToken)
         {
             return await base.GetPagedEntityForUsers(searchObject, cancellationToken);
         }
 
         [NonAction]
-        public override Task<ActionResult<UserFavoritesM>> EntityGetByIdForEmployees(int id, CancellationToken cancellationToken)
+        public override async Task<ActionResult<UserFavoritesUM>> EntityGetByIdForUsers(int id, CancellationToken cancellationToken)
         {
-            return base.EntityGetByIdForEmployees(id, cancellationToken);
+            return await base.EntityGetByIdForUsers(id, cancellationToken);
         }
 
         [NonAction]
-        public override Task<ActionResult<UserFavoritesM>> InsertEntityForEmployees(UserFavoritesIR request, CancellationToken cancellationToken)
+        public override async Task<ActionResult<UserFavoritesEM>> EntityGetByIdForEmployees(int id, CancellationToken cancellationToken)
         {
-            return base.InsertEntityForEmployees(request, cancellationToken);
+            return await base.EntityGetByIdForEmployees(id, cancellationToken);
         }
 
         [NonAction]
-        public override Task<ActionResult<UserFavoritesM>> UpdateEntityForEmployees(int id, UserFavoritesUR request, CancellationToken cancellationToken)
+        public override async Task<ActionResult<UserFavoritesEM>> InsertEntityForEmployees(UserFavoritesEIR request, CancellationToken cancellationToken)
         {
-            return base.UpdateEntityForEmployees(id, request, cancellationToken);
+            return await base.InsertEntityForEmployees(request, cancellationToken);
         }
 
         [NonAction]
-        public override Task<ActionResult<string>> SoftDelete(int id, CancellationToken cancellationToken)
+        public override async Task<ActionResult<UserFavoritesEM>> UpdateEntityForEmployees(int id, UserFavoritesEUR request, CancellationToken cancellationToken)
         {
-            return base.SoftDelete(id, cancellationToken);
+            return await base.UpdateEntityForEmployees(id, request, cancellationToken);
         }
 
         [NonAction]
-        public override Task<ActionResult<UserFavoritesM>> EntityGetByIdForUsers(int id, CancellationToken cancellationToken)
+        public override async Task<ActionResult<string>> SoftDelete(int id, CancellationToken cancellationToken)
         {
-            return base.EntityGetByIdForUsers(id, cancellationToken);
+            return await base.SoftDelete(id, cancellationToken);
         }
+
+        [NonAction]
+        public override async Task<ActionResult<UserFavoritesUM>> UpdateEntityForUsers(int id, UserFavoritesUUR request, CancellationToken cancellationToken)
+        {
+            return await base.UpdateEntityForUsers(id, request, cancellationToken);
+        }
+        
     }
 }

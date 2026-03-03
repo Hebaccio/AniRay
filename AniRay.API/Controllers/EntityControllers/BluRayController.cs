@@ -15,18 +15,18 @@ namespace AniRay.API.Controllers.EntityControllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class BluRayController : BaseCRUDController<BluRayUM, BluRayEM, BluRayUSO, BluRayESO, BluRay, BluRayIR, BluRayIR, BluRayUR, BluRayUR>
+    public class BluRayController : BaseCRUDController<BluRayUM, BluRayEM, BluRayUSO, BluRayESO, BluRay, BluRayUIR, BluRayEIR, BluRayUUR, BluRayEUR>
     {
         public BluRayController(IBluRayService Service) : base(Service) { }
 
         [NonAction]
-        public override async Task<ActionResult<BluRayUM>> InsertEntityForUsers(BluRayIR request, CancellationToken cancellationToken)
+        public override async Task<ActionResult<BluRayUM>> InsertEntityForUsers(BluRayUIR request, CancellationToken cancellationToken)
         {
             return await base.InsertEntityForUsers(request, cancellationToken);
         }
 
         [NonAction]
-        public override async Task<ActionResult<BluRayUM>> UpdateEntityForUsers(int id, BluRayUR request, CancellationToken cancellationToken)
+        public override async Task<ActionResult<BluRayUM>> UpdateEntityForUsers(int id, BluRayUUR request, CancellationToken cancellationToken)
         {
             return await base.UpdateEntityForUsers(id, request, cancellationToken);
         }

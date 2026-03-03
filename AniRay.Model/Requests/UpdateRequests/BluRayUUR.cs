@@ -8,9 +8,8 @@ using System.Threading.Tasks;
 
 namespace AniRay.Model.Requests.UpdateRequests
 {
-    public class UserFavoritesUR
+    public class BluRayUUR
     {
-        //public int UserId { get; set; }
-        public List<int>? MovieId { get; set; }
+        
     }
 }

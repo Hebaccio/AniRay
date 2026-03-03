@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace AniRay.Services.Interfaces
 {
-    public interface IUserCartService : ICRUDService<UserCartUM, UserCartUM, BaseSO, BaseSO, UserCartIR, UserCartIR, UserCartUR, UserCartUR>
+    public interface IUserCartService : ICRUDService<UserCartUM, UserCartEM, BaseSO, BaseSO, UserCartUIR, UserCartEIR, UserCartUUR, UserCartEUR>
     {
     }
 }

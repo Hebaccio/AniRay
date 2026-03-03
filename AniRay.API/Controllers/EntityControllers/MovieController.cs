@@ -15,18 +15,18 @@ namespace AniRay.API.Controllers.EntityControllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class MovieController : BaseCRUDController<MovieUM, MovieEM, MovieUSO, MovieESO, Movie, MovieIR, MovieIR, MovieUR, MovieUR>
+    public class MovieController : BaseCRUDController<MovieUM, MovieEM, MovieUSO, MovieESO, Movie, MovieUIR, MovieEIR, MovieUUR, MovieEUR>
     {
         public MovieController(IMovieService Service) : base(Service) { }
 
         [NonAction]
-        public override async Task<ActionResult<MovieUM>> InsertEntityForUsers(MovieIR request, CancellationToken cancellationToken)
+        public override async Task<ActionResult<MovieUM>> InsertEntityForUsers(MovieUIR request, CancellationToken cancellationToken)
         {
             return await base.InsertEntityForUsers(request, cancellationToken);
         }
 
         [NonAction]
-        public override async Task<ActionResult<MovieUM>> UpdateEntityForUsers(int id, MovieUR request, CancellationToken cancellationToken)
+        public override async Task<ActionResult<MovieUM>> UpdateEntityForUsers(int id, MovieUUR request, CancellationToken cancellationToken)
         {
             return await base.UpdateEntityForUsers(id, request, cancellationToken);
         }

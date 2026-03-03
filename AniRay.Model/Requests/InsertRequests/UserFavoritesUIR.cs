@@ -6,10 +6,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AniRay.Model.Requests.SearchRequests
+namespace AniRay.Model.Requests.InsertRequests
 {
-    public class RequestUSO : BaseSO
+    public class UserFavoritesUIR
     {
-        
+        //public int UserId { get; set; }
+        public int MovieId { get; set; }
     }
 }

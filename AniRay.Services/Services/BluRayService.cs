@@ -18,7 +18,7 @@ using System.Threading.Tasks;
 
 namespace AniRay.Services.Services
 {
-    public class BluRayService : BaseCRUDService<BluRayUM, BluRayEM, BluRayUSO, BluRayESO, BluRay, BluRayIR, BluRayIR, BluRayUR, BluRayUR>, IBluRayService
+    public class BluRayService : BaseCRUDService<BluRayUM, BluRayEM, BluRayUSO, BluRayESO, BluRay, BluRayUIR, BluRayEIR, BluRayUUR, BluRayEUR>, IBluRayService
     {
         private readonly ICurrentUserService _currentUser;
 
@@ -27,11 +27,21 @@ namespace AniRay.Services.Services
             _currentUser = currentUser;
         }
 
-
         #region Get By Id - For Users
         public override IQueryable<BluRay> AddGetByIdFiltersForUsers(IQueryable<BluRay> query)
         {
             query = query.Where(br => !br.IsDeleted && !br.Movie.IsDeleted);
+            query = query.Include(br => br.AudioFormat);
+            query = query.Include(br => br.VideoFormat);
+
+            return query;
+        }
+        #endregion
+
+        #region Get By Id - For Employees
+        public override IQueryable<BluRay> AddGetByIdFiltersForEmployees(IQueryable<BluRay> query)
+        {
+            query = query.Where(br => !br.Movie.IsDeleted);
             query = query.Include(br => br.AudioFormat);
             query = query.Include(br => br.VideoFormat);
 
@@ -50,26 +60,7 @@ namespace AniRay.Services.Services
         }
         #endregion
 
-        #region Get By Id - For Employees
-        public override bool IsGetByIdForEmployeesAuthorized()
-        {
-            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
-        }
-        public override IQueryable<BluRay> AddGetByIdFiltersForEmployees(IQueryable<BluRay> query)
-        {
-            query = query.Where(br => !br.Movie.IsDeleted);
-            query = query.Include(br => br.AudioFormat);
-            query = query.Include(br => br.VideoFormat);
-
-            return query;
-        }
-        #endregion
-
         #region Get Paged - For Employees
-        public override bool IsGetPagedForEmployeesAuthorized()
-        {
-            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
-        }
         public override IQueryable<BluRay> AddGetPagedFiltersForEmployees(BluRayESO search, IQueryable<BluRay> query)
         {
             query = query.Where(br => br.MovieId == search.MovieId && !br.Movie.IsDeleted).OrderBy(br => br.IsDeleted).ThenByDescending(br => br.Title);
@@ -81,19 +72,11 @@ namespace AniRay.Services.Services
         #endregion
 
         #region Insert - For Users
-        //No implementation as this function will not be added
-        #endregion
-
-        #region Update - For Users
-        //No implementation as this function will not be added
+        //Doesn't Exist
         #endregion
 
         #region Insert - For Employees
-        public override bool IsInsertForEmployeesAuthorized()
-        {
-            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
-        }
-        public override async Task<ServiceResult<bool>> BeforeInsertForEmployees(BluRayIR request, BluRay entity, CancellationToken cancellationToken)
+        public override async Task<ServiceResult<bool>> BeforeInsertForEmployees(BluRayEIR request, BluRay entity, CancellationToken cancellationToken)
         {
             var nullCheck = BeforeInsertNullCheck(request);
             if (!nullCheck.Success)
@@ -116,7 +99,7 @@ namespace AniRay.Services.Services
             return ServiceResult<bool>.Ok(true);
         }
 
-        private ServiceResult<bool> BeforeInsertNullCheck(BluRayIR request)
+        private ServiceResult<bool> BeforeInsertNullCheck(BluRayEIR request)
         {
             if (request == null)
                 return ServiceResult<bool>.Fail("Blu Ray INsert Request cannot be null");
@@ -145,7 +128,7 @@ namespace AniRay.Services.Services
 
             return ServiceResult<bool>.Ok(true);
         }
-        private ServiceResult<bool> BeforeInsertValidation(BluRayIR request)
+        private ServiceResult<bool> BeforeInsertValidation(BluRayEIR request)
         {
             if (request.Image.Length > 300)
                 return ServiceResult<bool>.Fail("Image URL cannot exceed 300 characters");
@@ -182,20 +165,19 @@ namespace AniRay.Services.Services
             if (!await Context.Set<AudioFormat>().AnyAsync(a => a.Id == audioFormatId, cancellationToken))
                 return ServiceResult<bool>.Fail("Selected audio format does not exist.");
 
-            if (! await Context.Set<Movie>().AnyAsync(m => m.Id == movieId, cancellationToken))
+            if (!await Context.Set<Movie>().AnyAsync(m => m.Id == movieId, cancellationToken))
                 return ServiceResult<bool>.Fail("Selected movie does not exist.");
 
             return ServiceResult<bool>.Ok(true);
         }
         #endregion
 
-        #region Update - For Employees
-        public override bool IsUpdateForEmployeesAuthorized()
-        {
-            return _currentUser.IsAuthenticated && _currentUser.IsWorker();
-        }
+        #region Update - For Users
+        //Doesn't Exist
+        #endregion
 
-        public override async Task<ServiceResult<bool>> BeforeUpdateForEmployees(BluRayUR request, BluRay entity, CancellationToken cancellationToken)
+        #region Update - For Employees
+        public override async Task<ServiceResult<bool>> BeforeUpdateForEmployees(BluRayEUR request, BluRay entity, CancellationToken cancellationToken)
         {
             var nullCheck = BeforeUpdateNullCheck(request);
             if (!nullCheck.Success)
@@ -215,7 +197,7 @@ namespace AniRay.Services.Services
             return ServiceResult<bool>.Ok(true);
         }
 
-        private ServiceResult<bool> BeforeUpdateNullCheck(BluRayUR request)
+        private ServiceResult<bool> BeforeUpdateNullCheck(BluRayEUR request)
         {
             if (string.IsNullOrEmpty(request?.Image?.Trim()))
                 return ServiceResult<bool>.Fail("Image URL cannot be null");
@@ -242,7 +224,7 @@ namespace AniRay.Services.Services
 
             return ServiceResult<bool>.Ok(true);
         }
-        private ServiceResult<bool> BeforeUpdateValidation(BluRayUR request)
+        private ServiceResult<bool> BeforeUpdateValidation(BluRayEUR request)
         {
             if (request.Image.Length > 300)
                 return ServiceResult<bool>.Fail("Image URL cannot exceed 300 characters");
@@ -264,14 +246,14 @@ namespace AniRay.Services.Services
         }
         #endregion
 
-        #region Soft Delete
-        public override bool IsSoftDeleteAuthorized(int id)
+        #region SoftDelete
+        public bool IsSoftDeleteAuthorized()
         {
             return _currentUser.IsAuthenticated && _currentUser.IsWorker();
         }
-        public override async Task<ActionResult<string>> SoftDelete(int id, CancellationToken cancellationToken)
+        public override async Task<ActionResult<string>> SoftDelete(int? id, CancellationToken cancellationToken)
         {
-            if (!IsSoftDeleteAuthorized(id))
+            if (!IsSoftDeleteAuthorized())
                 return new UnauthorizedResult();
 
             var entity = await Context.Set<BluRay>().FindAsync(id, cancellationToken);
@@ -284,6 +266,7 @@ namespace AniRay.Services.Services
             return new OkObjectResult(new { message = $"BluRay {entity.Title} is successfully deleted." });
         }
         #endregion
+
 
     }
 }
