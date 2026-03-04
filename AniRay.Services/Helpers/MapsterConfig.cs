@@ -1,5 +1,6 @@
 ﻿using AniRay.Model.Entities;
 using AniRay.Model.Requests.GetRequests;
+using AniRay.Model.Requests.InsertRequests;
 using AniRay.Model.Requests.UpdateRequests;
 using Mapster;
 using System;
@@ -17,6 +18,7 @@ namespace AniRay.Services.Helpers
             RegisterRequestMappings();
             RegisterMovieMappings();
             RegisterUserFavoritesMappings();
+            RegisterOrderMappings();
         }
 
         private static void RegisterRequestMappings()
@@ -39,6 +41,19 @@ namespace AniRay.Services.Helpers
         private static void RegisterUserFavoritesMappings()
         {
             TypeAdapterConfig<UserFavoritesUUR, UserFavorites>.NewConfig().IgnoreNonMapped(true);
+        }
+
+        private static void RegisterOrderMappings()
+        {
+            TypeAdapterConfig<Order, OrderUM>.NewConfig()
+            .Map(dest => dest.UserName, src => src.User.Name + " " + src.User.LastName)
+            .Map(dest => dest.UserMail, src => src.User.Email);
+
+            TypeAdapterConfig<Order, OrderEM>.NewConfig()
+            .Map(dest => dest.UserName, src => src.User.Name + " " + src.User.LastName)
+            .Map(dest => dest.UserMail, src => src.User.Email);
+
+            TypeAdapterConfig<OrderUIR, Order>.NewConfig().Ignore(dest => dest.BluRay);
         }
     }
 }

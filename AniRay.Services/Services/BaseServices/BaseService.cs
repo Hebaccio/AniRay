@@ -103,8 +103,7 @@ namespace AniRay.Services.Services.BaseServices
             IQueryable<TDbEntity> query = Context.Set<TDbEntity>().AsQueryable();
             query = AddGetByIdFiltersForEmployees(query);
 
-            var entity = await query.FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == id, cancellationToken);
-
+            var entity = await EntityGetTriggerForEmployee(id, query, cancellationToken);
             if (entity == null)
                 return new NotFoundObjectResult(new { message = $"Entity with ID {id} not found." });
 
@@ -119,6 +118,10 @@ namespace AniRay.Services.Services.BaseServices
         public virtual IQueryable<TDbEntity> AddGetByIdFiltersForEmployees(IQueryable<TDbEntity> query)
         {
             return query;
+        }
+        public virtual async Task<TDbEntity?> EntityGetTriggerForEmployee(int? id, IQueryable<TDbEntity> query, CancellationToken cancellationToken)
+        {
+            return await query.FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == id, cancellationToken);
         }
         #endregion
 
