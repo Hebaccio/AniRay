@@ -17,5 +17,6 @@ namespace AniRay.Model.Entities
 
         public string Code { get; set; }
         public DateTime CreatedAt { get; set; }
+        public int Attempt { get; set; }
     }
 }

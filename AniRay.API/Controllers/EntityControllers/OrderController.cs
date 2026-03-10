@@ -20,16 +20,6 @@ namespace AniRay.API.Controllers.EntityControllers
     {
         public OrderController(IOrderService Service) : base(Service) { }
 
-
-
-
-
-
-
-
-
-
-
         [NonAction]
         public override async Task<ActionResult<OrderEM>> InsertEntityForEmployees(OrderEIR request, CancellationToken cancellationToken)
         {

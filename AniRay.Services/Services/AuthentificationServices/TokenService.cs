@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using AniRay.Services.Interfaces;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
@@ -11,18 +12,11 @@ using System.Threading.Tasks;
 
 namespace AniRay.Services.Services.AuthentificationServices
 {
-    public interface ITokenService
-    {
-        string CreateAccessToken(ClaimsIdentity identity, DateTime expires);
-        string CreateRefreshToken();
-        ClaimsPrincipal? GetPrincipalFromExpiredToken(string token);
-    }
-
-    public class JwtTokenService : ITokenService
+    public class TokenService : ITokenService
     {
         private readonly IConfiguration _config;
         private readonly SymmetricSecurityKey _key;
-        public JwtTokenService(IConfiguration config)
+        public TokenService(IConfiguration config)
         {
             _config = config;
             _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
