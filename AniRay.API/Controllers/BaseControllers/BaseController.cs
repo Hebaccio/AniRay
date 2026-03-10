@@ -1,6 +1,6 @@
 ﻿using AniRay.Model;
 using AniRay.Model.Requests.SearchRequests;
-using AniRay.Services.Interfaces.BaseInterfaces;
+using AniRay.Services.BaseServices.BaseService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

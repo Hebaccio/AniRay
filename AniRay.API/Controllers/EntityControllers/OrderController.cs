@@ -7,8 +7,7 @@ using AniRay.Model.Requests.GetRequests;
 using AniRay.Model.Requests.InsertRequests;
 using AniRay.Model.Requests.SearchRequests;
 using AniRay.Model.Requests.UpdateRequests;
-using AniRay.Services.Interfaces;
-using AniRay.Services.Services.AuthentificationServices;
+using AniRay.Services.EntityServices.OrderService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
