@@ -102,7 +102,7 @@ namespace AniRay.Services.EntityServices.BluRayService
         private ServiceResult<bool> BeforeInsertNullCheck(BluRayEIR request)
         {
             if (request == null)
-                return ServiceResult<bool>.Fail("Blu Ray INsert Request cannot be null");
+                return ServiceResult<bool>.Fail("Blu Ray Insert Request cannot be null");
             if (string.IsNullOrEmpty(request?.Image?.Trim()))
                 return ServiceResult<bool>.Fail("Image URL cannot be null");
             if (string.IsNullOrEmpty(request?.Title?.Trim()))
@@ -150,7 +150,6 @@ namespace AniRay.Services.EntityServices.BluRayService
         }
         private bool IsReleaseDateInvalid(DateOnly ReleaseDate)
         {
-
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
             var oneWeekFromNow = today.AddDays(7);
             var earliestAllowedDate = new DateOnly(1908, 8, 17);
@@ -266,7 +265,6 @@ namespace AniRay.Services.EntityServices.BluRayService
             return new OkObjectResult(new { message = $"BluRay {entity.Title} is successfully deleted." });
         }
         #endregion
-
 
     }
 }

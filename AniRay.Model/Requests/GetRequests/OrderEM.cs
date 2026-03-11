@@ -14,7 +14,7 @@ namespace AniRay.Model.Requests.GetRequests
         public decimal FullPrice { get; set; }
         //public int OrderStatusId { get; set; }
         public OrderStatus OrderStatus { get; set; }
-        //public int UserId { get; set; }
+        public int UserId { get; set; }
         //public User User { get; set; }
         public string UserName { get; set; }
         public string UserMail { get; set; }

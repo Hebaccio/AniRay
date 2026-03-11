@@ -136,31 +136,7 @@ namespace AniRay.Services.EntityServices.OrderService
             if (!bluRayValidation.Success)
                 return ServiceResult<bool>.Fail(bluRayValidation.Message);
 
-            var bluRaysFromDb = bluRayValidation.Data;
-
-            entity.UserId = _currentUser.UserId.Value;
-            entity.User = await Context.Users.FindAsync(entity.UserId, cancellationToken);
-            entity.OrderStatusId = (int)CoreData.CoreOrderStatus.InProgress;
-            entity.OrderStatus = await Context.OrderStatuses.FindAsync((int)CoreData.CoreOrderStatus.InProgress, cancellationToken);
-            entity.DateTime = DateTime.UtcNow;
-
-            decimal totalPrice = 0;
-
-            foreach (var item in request.BluRay)
-            {
-                var dbBluRay = bluRaysFromDb.First(b => b.Id == item.BluRayId);
-
-                dbBluRay.InStock -= item.Amount;
-                entity.BluRay.Add(new OrderBluRay
-                {
-                    BluRayId = item.BluRayId,
-                    Amount = item.Amount
-                });
-
-                totalPrice += dbBluRay.Price * item.Amount;
-            }
-
-            entity.FullPrice = totalPrice;
+            await PopulateOrderEntity(request, entity, bluRayValidation.Data!, cancellationToken);
 
             return ServiceResult<bool>.Ok(true);
         }
@@ -195,6 +171,8 @@ namespace AniRay.Services.EntityServices.OrderService
         }
         private async Task<ServiceResult<List<BluRay>>> ValidateBluRays(OrderUIR request, CancellationToken cancellationToken)
         {
+            var errors = new List<string>();
+
             if (request.BluRay == null || !request.BluRay.Any())
                 return ServiceResult<List<BluRay>>.Fail("Order must contain at least one BluRay.");
 
@@ -205,36 +183,69 @@ namespace AniRay.Services.EntityServices.OrderService
                 return ServiceResult<List<BluRay>>.Fail("Duplicate BluRay entries are not allowed.");
 
             var bluRayIds = request.BluRay.Select(x => x.BluRayId).ToList();
-
             var bluRaysFromDb = await Context.Set<BluRay>().Where(b => bluRayIds.Contains(b.Id) && !b.IsDeleted).ToListAsync(cancellationToken);
 
             if (bluRaysFromDb.Count != bluRayIds.Count)
-                return ServiceResult<List<BluRay>>.Fail("One or more BluRays do not exist.");
+                errors.Add("One or more BluRays do not exist.");
 
             foreach (var item in request.BluRay)
             {
                 if (item.Amount <= 0 || item.Amount > 5)
-                    return ServiceResult<List<BluRay>>.Fail("Amount must be between 1 and 5.");
+                {
+                    errors.Add($"Amount for BluRayId {item.BluRayId} must be between 1 and 5.");
+                    continue;
+                }
 
-                var dbBluRay = bluRaysFromDb.First(b => b.Id == item.BluRayId);
-
+                var dbBluRay = bluRaysFromDb.FirstOrDefault(b => b.Id == item.BluRayId);
+                if (dbBluRay == null)
+                    continue;
                 if (item.Amount > dbBluRay.InStock)
-                    return ServiceResult<List<BluRay>>.Fail(
-                        $"Not enough stock for BluRay '{dbBluRay.Title}'. Available: {dbBluRay.InStock}");
+                {
+                    errors.Add(
+                        $"Not enough BluRay's in stock for '{dbBluRay.Title}'. Available: {dbBluRay.InStock}");
+                }
             }
 
+            if (errors.Any())
+                return ServiceResult<List<BluRay>>.Fail(string.Join(Environment.NewLine, errors));
+
             return ServiceResult<List<BluRay>>.Ok(bluRaysFromDb);
+        }
+        private async Task PopulateOrderEntity(OrderUIR request, Order entity, List<BluRay> bluRaysFromDb, CancellationToken cancellationToken)
+        {
+            entity.UserId = _currentUser.UserId!.Value;
+            entity.User = await Context.Users.FindAsync(entity.UserId, cancellationToken);
+
+            entity.OrderStatusId = (int)CoreData.CoreOrderStatus.InProgress;
+            entity.OrderStatus = await Context.OrderStatuses.FindAsync(entity.OrderStatusId, cancellationToken);
+
+            entity.DateTime = DateTime.UtcNow;
+            decimal totalPrice = 0;
+
+            foreach (var item in request.BluRay)
+            {
+                var dbBluRay = bluRaysFromDb.First(b => b.Id == item.BluRayId);
+                dbBluRay.InStock -= item.Amount;
+
+                entity.BluRay.Add(new OrderBluRay
+                {
+                    BluRayId = item.BluRayId,
+                    Amount = item.Amount
+                });
+
+                totalPrice += dbBluRay.Price * item.Amount;
+            }
+
+            entity.FullPrice = totalPrice;
         }
         #endregion
 
         #region Insert - For Employees
         //Doesn't Exist
-        //ACTUALLY
         #endregion
 
         #region Update - For Users
         //Doesn't Exist
-        //ACTUALLY
         #endregion
 
         #region Update - For Employees
@@ -248,7 +259,9 @@ namespace AniRay.Services.EntityServices.OrderService
             await Context.Entry(entity).Reference(o => o.User).LoadAsync(cancellationToken);
             await Context.Entry(entity).Collection(o => o.BluRay).Query().Include(ob => ob.BluRay).LoadAsync(cancellationToken);
 
-            if (request.OrderStatusId == (int)CoreOrderStatus.Cancelled || request.OrderStatusId == (int)CoreOrderStatus.Rejected)
+            if (entity.OrderStatusId == (int)CoreOrderStatus.InProgress && 
+                (request.OrderStatusId == (int)CoreOrderStatus.Cancelled || 
+                 request.OrderStatusId == (int)CoreOrderStatus.Rejected))
             {
                 foreach (var ob in entity.BluRay)
                 {
@@ -260,20 +273,16 @@ namespace AniRay.Services.EntityServices.OrderService
         }
         private ServiceResult<bool> BeforeUpdateValidation(OrderEUR request)
         {
-            var ValidStatuses = Context.Set<OrderStatus>().ToList();
-            foreach (var status in ValidStatuses)
-            {
-                if(request.OrderStatusId == status.Id)
-                    return ServiceResult<bool>.Ok(true);
-            }
+            var exists = Context.Set<OrderStatus>().Any(x => x.Id == request.OrderStatusId);
+            if (!exists)
+                return ServiceResult<bool>.Fail("Order Status Id is not valid");
 
-            return ServiceResult<bool>.Fail("Order Status Id is not valid");
+            return ServiceResult<bool>.Ok(true);
         }
         #endregion
 
         #region SoftDelete
         //Doesn't Exist
-        //ACTUALLY
         #endregion
 
     }

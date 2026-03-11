@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
@@ -89,7 +90,7 @@ namespace AniRay.Services.EntityServices.UserCartService
             var mergedItems = MergeDuplicateItems(request.BluRay);
             request.BluRay = mergedItems;
 
-            var existenceResult = await ValidateExistenceAndStock(mergedItems, cancellationToken);
+            var existenceResult = await ValidateExistence(mergedItems, cancellationToken);
             if (!existenceResult.Success) return existenceResult;
 
             await SyncCartItems(entity, mergedItems, cancellationToken);
@@ -121,15 +122,14 @@ namespace AniRay.Services.EntityServices.UserCartService
         {
             if (items == null) return new List<BluRayCartUR>();
 
-            return items
-                .GroupBy(x => x.BluRayId)
+            return items.GroupBy(x => x.BluRayId)
                 .Select(g => new BluRayCartUR
                 {
                     BluRayId = g.Key,
                     Amount = g.Sum(x => x.Amount)
                 }).ToList();
         }
-        private async Task<ServiceResult<bool>> ValidateExistenceAndStock(List<BluRayCartUR> items, CancellationToken cancellationToken)
+        private async Task<ServiceResult<bool>> ValidateExistence(List<BluRayCartUR> items, CancellationToken cancellationToken)
         {
             var requestedIds = items.Select(x => x.BluRayId).ToList();
 
@@ -146,32 +146,46 @@ namespace AniRay.Services.EntityServices.UserCartService
         {
             await Context.Entry(entity).Collection(c => c.BluRay).LoadAsync(cancellationToken);
 
-            var duplicateGroups = entity.BluRay.GroupBy(x => x.BluRayId).Where(g => g.Count() > 1).ToList();
+            RemoveDuplicateCartItems(entity);
+            RemoveDeletedCartItems(entity, mergedItems);
+            await AddAndUpdateCartItems(entity, mergedItems, cancellationToken);
+        }
+        private void RemoveDuplicateCartItems(UserCart entity)
+        {
+            var duplicateGroups = entity.BluRay.GroupBy(x => x.BluRayId).Where(g => g.Count() > 1);
+
             foreach (var group in duplicateGroups)
             {
                 var first = group.First();
-                var duplicates = group.Skip(1).ToList();
+                var duplicates = group.Skip(1);
 
                 foreach (var duplicate in duplicates)
-                {
                     Context.Set<BluRayCart>().Remove(duplicate);
-                }
             }
+        }
+        private void RemoveDeletedCartItems(UserCart entity, List<BluRayCartUR> mergedItems)
+        {
+            var existingCartItems = entity.BluRay.GroupBy(x => x.BluRayId).Select(g => g.First()).ToList();
+            var requestDict = mergedItems.ToDictionary(x => x.BluRayId);
 
+            foreach (var item in existingCartItems.Where(x => !requestDict.ContainsKey(x.BluRayId)))
+                entity.BluRay.Remove(item);
+        }
+        private async Task AddAndUpdateCartItems(UserCart entity, List<BluRayCartUR> mergedItems, CancellationToken cancellationToken)
+        {
             var existingCartItems = entity.BluRay.GroupBy(x => x.BluRayId).Select(g => g.First()).ToList();
             var existingDict = existingCartItems.ToDictionary(x => x.BluRayId);
             var requestDict = mergedItems.ToDictionary(x => x.BluRayId);
 
-            foreach (var item in existingCartItems.Where(x => !requestDict.ContainsKey(x.BluRayId)).ToList())
-                Context.Set<BluRayCart>().Remove(item);
-
             foreach (var item in mergedItems.Where(x => !existingDict.ContainsKey(x.BluRayId)))
+            {
                 entity.BluRay.Add(new BluRayCart
                 {
                     UserCartId = entity.Id,
                     BluRayId = item.BluRayId,
                     Amount = item.Amount
                 });
+            }
 
             foreach (var item in existingCartItems.Where(x => requestDict.ContainsKey(x.BluRayId)))
             {
@@ -180,11 +194,17 @@ namespace AniRay.Services.EntityServices.UserCartService
                     item.Amount = newAmount;
             }
 
-            //await Context.SaveChangesAsync(cancellationToken);
+            var bluRayIds = entity.BluRay.Select(x => x.BluRayId).ToList();
+            var bluRaysFromDb = await Context.Set<BluRay>().Where(b => bluRayIds.Contains(b.Id)).ToListAsync(cancellationToken);
+
+            var bluRayDict = bluRaysFromDb.ToDictionary(b => b.Id);
+            foreach (var cartItem in entity.BluRay)
+            {
+                cartItem.BluRay = bluRayDict[cartItem.BluRayId];
+            }
         }
         private async Task RecalculateCartPrice(UserCart entity, CancellationToken cancellationToken)
         {
-            await Context.Entry(entity).Collection(c => c.BluRay).Query().Include(x => x.BluRay).LoadAsync(cancellationToken);
             entity.FullCartPrice = entity.BluRay.Sum(x => x.Amount * x.BluRay.Price);
         }
         #endregion

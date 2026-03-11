@@ -124,57 +124,23 @@ namespace AniRay.Services.EntityServices.UserFavoritesService
             if (!validationCheck.Success)
                 return validationCheck;
 
-            var userId = _currentUser.UserId.Value;
+            var userId = _currentUser.UserId!.Value;
 
-            var existingFavorites = await Context.Set<UserFavorites>().Where(x => x.UserId == userId).ToListAsync(cancellationToken);
+            var existingFavorites = await GetExistingFavorites(userId, cancellationToken);
 
-            var currentMovieIds = existingFavorites.Select(x => x.MovieId).ToHashSet();
+            var currentSet = existingFavorites.Select(x => x.MovieId).ToHashSet();
             var requestedSet = requestedIds.ToHashSet();
+            var toRemoveIds = currentSet.Except(requestedSet).ToList();
+            var toAddIds = requestedSet.Except(currentSet).ToList();
 
-            var toRemove = existingFavorites.Where(x => !requestedSet.Contains(x.MovieId)).ToList();
-
-            if (toRemove.Any())
-            {
-                var removedMovieIds = toRemove.Select(x => x.MovieId).ToList();
-
-                var moviesToDecrement = await Context.Set<Movie>()
-                    .Where(m => removedMovieIds.Contains(m.Id))
-                    .ToListAsync(cancellationToken);
-
-                foreach (var movie in moviesToDecrement)
-                    movie.Favorites = Math.Max(0, movie.Favorites - 1);
-
-                Context.Set<UserFavorites>().RemoveRange(toRemove);
-            }
-
-            var toAdd = requestedIds.Where(id => !currentMovieIds.Contains(id))
-                .Select(id => new UserFavorites
-                {
-                    UserId = userId,
-                    MovieId = id
-                }).ToList();
-
-            if (toAdd.Any())
-            {
-                await Context.Set<UserFavorites>()
-                    .AddRangeAsync(toAdd, cancellationToken);
-
-                var addedMovieIds = toAdd.Select(x => x.MovieId).ToList();
-
-                var moviesToIncrement = await Context.Set<Movie>()
-                    .Where(m => addedMovieIds.Contains(m.Id))
-                    .ToListAsync(cancellationToken);
-
-                foreach (var movie in moviesToIncrement)
-                    movie.Favorites += 1;
-            }
+            await RemoveFavorites(existingFavorites, toRemoveIds, cancellationToken);
+            await AddFavorites(userId, toAddIds, cancellationToken);
 
             return ServiceResult<bool>.Ok(true);
         }
         private async Task<ServiceResult<bool>> ValidateForeignKeysForUpdate(List<int> requestedIds, CancellationToken cancellationToken)
         {
             var userExists = await Context.Set<User>().AnyAsync(x => x.Id == _currentUser.UserId, cancellationToken);
-
             if (!userExists)
                 return ServiceResult<bool>.Fail("User does not exist.");
 
@@ -182,11 +148,44 @@ namespace AniRay.Services.EntityServices.UserFavoritesService
                 return ServiceResult<bool>.Ok(true);
 
             var existingMovieIds = await Context.Set<Movie>().Where(x => requestedIds.Contains(x.Id)).Select(x => x.Id).ToListAsync(cancellationToken);
-
             if (existingMovieIds.Count != requestedIds.Count)
                 return ServiceResult<bool>.Fail("Some movies do not exist.");
 
             return ServiceResult<bool>.Ok(true);
+        }
+        private async Task<List<UserFavorites>> GetExistingFavorites(int userId, CancellationToken cancellationToken)
+        {
+            return await Context.Set<UserFavorites>().Where(x => x.UserId == userId).ToListAsync(cancellationToken);
+        }
+        private async Task RemoveFavorites(List<UserFavorites> existingFavorites, List<int> toRemoveIds, CancellationToken cancellationToken)
+        {
+            if (!toRemoveIds.Any())
+                return;
+
+            var toRemove = existingFavorites.Where(x => toRemoveIds.Contains(x.MovieId)).ToList();
+            var movies = await Context.Set<Movie>().Where(m => toRemoveIds.Contains(m.Id)).ToListAsync(cancellationToken);
+
+            foreach (var movie in movies)
+                movie.Favorites = Math.Max(0, movie.Favorites - 1);
+
+            Context.Set<UserFavorites>().RemoveRange(toRemove);
+        }
+        private async Task AddFavorites(int userId, List<int> toAddIds, CancellationToken cancellationToken)
+        {
+            if (!toAddIds.Any())
+                return;
+
+            var favorites = toAddIds
+                .Select(id => new UserFavorites
+                {
+                    UserId = userId,
+                    MovieId = id
+                }).ToList();
+
+            await Context.Set<UserFavorites>().AddRangeAsync(favorites, cancellationToken);
+            var movies = await Context.Set<Movie>().Where(m => toAddIds.Contains(m.Id)).ToListAsync(cancellationToken);
+            foreach (var movie in movies)
+                movie.Favorites += 1;
         }
         #endregion
 

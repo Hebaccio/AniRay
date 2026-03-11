@@ -373,7 +373,6 @@ namespace AniRay.Services.EntityServices.UserService
         #endregion
 
         #region SoftDelete
-
         public override async Task<ActionResult<string>> SoftDelete(int? id, CancellationToken cancellationToken)
         {
             if (!IsSoftDeleteAuthorized())
