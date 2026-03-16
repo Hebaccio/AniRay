@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 
-namespace AniRay.Model.Requests.SearchRequests
+namespace AniRay.Model.Requestss.BasicEntities
 {
-    public class BaseClassUSO : BaseSO
+    public class BaseClassIRU
     {
-        
+
     }
 }

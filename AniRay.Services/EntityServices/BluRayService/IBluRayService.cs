@@ -1,8 +1,5 @@
 ﻿using AniRay.Model.Entities;
-using AniRay.Model.Requests.GetRequests;
-using AniRay.Model.Requests.InsertRequests;
-using AniRay.Model.Requests.SearchRequests;
-using AniRay.Model.Requests.UpdateRequests;
+using AniRay.Model.Requestss.BluRay;
 using AniRay.Services.BaseServices.BaseCRUDService;
 using System;
 using System.Collections.Generic;
@@ -12,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace AniRay.Services.EntityServices.BluRayService
 {
-    public interface IBluRayService : ICRUDService<BluRayUM, BluRayEM, BluRayUSO, BluRayESO, BluRayUIR, BluRayEIR, BluRayUUR, BluRayEUR>
+    public interface IBluRayService : ICRUDService<BluRayMU, BluRayME, BluRaySOU, BluRaySOE, BluRayIRU, BluRayIRE, BluRayURU, BluRayURE>
     {
     }
 }

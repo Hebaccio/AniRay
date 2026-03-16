@@ -3,11 +3,6 @@ using AniRay.Model.Requests.GetRequests;
 using AniRay.Model.Requests.InsertRequests;
 using AniRay.Model.Requests.UpdateRequests;
 using Mapster;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AniRay.Services.HelperServices.OtherHelpers
 {
@@ -15,6 +10,7 @@ namespace AniRay.Services.HelperServices.OtherHelpers
     {
         public static void RegisterMappings()
         {
+            TypeAdapterConfig.GlobalSettings.Default.IgnoreNullValues(true);
             RegisterRequestMappings();
             RegisterMovieMappings();
             RegisterUserFavoritesMappings();

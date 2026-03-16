@@ -8,9 +8,6 @@ namespace AniRay.Model.Entities
 {
     public class MovieGenre
     {
-        [Key]
-        public int Id { get; set; }
-
         [ForeignKey("MovieId")]
         public int MovieId { get; set; }
         public Movie Movie { get; set; }

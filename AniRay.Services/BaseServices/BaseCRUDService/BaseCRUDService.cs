@@ -6,7 +6,6 @@ using AniRay.Services.HelperServices.CurrentUserService;
 using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace AniRay.Services.BaseServices.BaseCRUDService
 {
@@ -92,11 +91,11 @@ namespace AniRay.Services.BaseServices.BaseCRUDService
             if (entity == null)
                 return new NotFoundObjectResult(new { message = "Entity not found." });
 
-            Mapper.Map(request, entity);
-
             var validationResult = await BeforeUpdateForUsers(request, entity, cancellationToken);
             if (!validationResult.Success)
                 return new BadRequestObjectResult(new { message = validationResult.Message });
+
+            Mapper.Map(request, entity);
 
             await Context.SaveChangesAsync(cancellationToken);
 
@@ -129,11 +128,11 @@ namespace AniRay.Services.BaseServices.BaseCRUDService
             if (entity == null)
                 return new NotFoundObjectResult(new { message = "Entity not found." });
 
-            Mapper.Map(request, entity);
-
             var validationResult = await BeforeUpdateForEmployees(request, entity, cancellationToken);
             if (!validationResult.Success)
                 return new BadRequestObjectResult(new { message = validationResult.Message });
+
+            Mapper.Map(request, entity);
 
             await Context.SaveChangesAsync(cancellationToken);
 

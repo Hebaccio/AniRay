@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
-namespace AniRay.Model.Requests.UpdateRequests
+namespace AniRay.Model.Requestss.BasicEntities
 {
-    public class BaseClassEUR
+    public class BaseClassME
     {
-        [Required(ErrorMessage = "You must provide a name")]
+        public int Id { get; set; }
         public string Name { get; set; }
-        [Required]
         public bool IsDeleted { get; set; }
     }
 }

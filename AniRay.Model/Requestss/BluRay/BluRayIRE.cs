@@ -1,34 +1,18 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-
-namespace AniRay.Model.Entities
+﻿namespace AniRay.Model.Requestss.BluRay
 {
-    public class BluRay
+    public class BluRayIRE
     {
-        [Key]
-        public int Id { get; set; }
         public string Image { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
         public DateOnly ReleaseDate { get; set; }
-
-        [ForeignKey("VideoFormatId")]
         public int VideoFormatId { get; set; }
-        public VideoFormat VideoFormat { get; set; }
-
-        [ForeignKey("AudioFormatId")]
         public int AudioFormatId { get; set; }
-        public AudioFormat AudioFormat { get; set; }
-
-        [ForeignKey("MovieId")]
         public int MovieId { get; set; }
-        public Movie Movie { get; set; }
-
         public int DiscCount { get; set; }
         public int Runtime { get; set; }
         public int InStock { get; set; }
         public string SubtitleLanguage { get; set; }
         public decimal Price { get; set; }
-        public bool IsDeleted { get; set; }
     }
 }

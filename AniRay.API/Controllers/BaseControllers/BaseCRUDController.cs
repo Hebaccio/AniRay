@@ -36,14 +36,14 @@ namespace AniRay.API.Controllers.BaseControllers
             return await _service.InsertEntityForEmployees(request, cancellationToken);
         }
 
-        [HttpPut("UpdateEntity/ForUsers/{id}")]
+        [HttpPatch("UpdateEntity/ForUsers/{id}")]
         [Authorize(Roles = "User")]
         public virtual async Task<ActionResult<TModelUser>> UpdateEntityForUsers(int id, TUpdateUser request, CancellationToken cancellationToken)
         {
             return await _service.UpdateEntityForUsers(id, request, cancellationToken);
         }
 
-        [HttpPut("UpdateEntity/ForUsers")]
+        [HttpPatch("UpdateEntity/ForUsers")]
         [Authorize(Roles = "User")]
         [NonAction]
         public virtual async Task<ActionResult<TModelUser>> UpdateEntityForUsers(TUpdateUser request, CancellationToken cancellationToken)
@@ -51,7 +51,7 @@ namespace AniRay.API.Controllers.BaseControllers
             return await _service.UpdateEntityForUsers(null, request, cancellationToken);
         }
 
-        [HttpPut("UpdateEntity/ForEmployees/{id}")]
+        [HttpPatch("UpdateEntity/ForEmployees/{id}")]
         [Authorize(Policy = "Workers")]
         public virtual async Task<ActionResult<TModelEmployee>> UpdateEntityForEmployees(int id, TUpdateEmployee request, CancellationToken cancellationToken)
         {

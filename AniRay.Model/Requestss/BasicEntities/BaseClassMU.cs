@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace AniRay.Model.Requests.GetRequests
+namespace AniRay.Model.Requestss.BasicEntities
 {
-    public class BaseClassUM
+    public class BaseClassMU
     {
         public int Id { get; set; }
         public string Name { get; set; }

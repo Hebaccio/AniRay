@@ -1,10 +1,7 @@
 ﻿using AniRay.Model;
 using AniRay.Model.Data;
 using AniRay.Model.Entities;
-using AniRay.Model.Requests.GetRequests;
-using AniRay.Model.Requests.InsertRequests;
-using AniRay.Model.Requests.SearchRequests;
-using AniRay.Model.Requests.UpdateRequests;
+using AniRay.Model.Requestss.BasicEntities;
 using AniRay.Services.BaseServices.BaseCRUDService;
 using AniRay.Services.HelperServices.CurrentUserService;
 using MapsterMapper;
@@ -15,11 +12,11 @@ namespace AniRay.Services.BaseServices.BasicEntitiesService
 {
     public class BasicEntitiesService<TDbEntity> :
         BaseCRUDService<
-            BaseClassUM, BaseClassEM,
-            BaseClassUSO, BaseClassESO,
+            BaseClassMU, BaseClassME,
+            BaseClassSOU, BaseClassSOE,
             TDbEntity,
-            BaseClassUIR, BaseClassEIR,
-            BaseClassUUR, BaseClassEUR>
+            BaseClassIRU, BaseClassIRE,
+            BaseClassURU, BaseClassURE>
         where TDbEntity : BaseClass
     {
         private readonly ICurrentUserService _currentUser;
@@ -38,14 +35,14 @@ namespace AniRay.Services.BaseServices.BasicEntitiesService
         #endregion
 
         #region Get Paged - For Users
-        public override IQueryable<TDbEntity> AddGetPagedFiltersForUsers(BaseClassUSO search, IQueryable<TDbEntity> query)
+        public override IQueryable<TDbEntity> AddGetPagedFiltersForUsers(BaseClassSOU search, IQueryable<TDbEntity> query)
         {
             return query.Where(x => !x.IsDeleted);
         }
         #endregion
 
         #region Get Paged - For Employees
-        public override IQueryable<TDbEntity> AddGetPagedFiltersForEmployees(BaseClassESO search, IQueryable<TDbEntity> query)
+        public override IQueryable<TDbEntity> AddGetPagedFiltersForEmployees(BaseClassSOE search, IQueryable<TDbEntity> query)
         {
             if (!string.IsNullOrEmpty(search.NameFTS))
                 query = query.Where(b => b.Name.Contains(search.NameFTS));
@@ -61,7 +58,7 @@ namespace AniRay.Services.BaseServices.BasicEntitiesService
         #endregion
 
         #region Insert - For Employees
-        public override async Task<ServiceResult<bool>> BeforeInsertForEmployees(BaseClassEIR request, TDbEntity entity, CancellationToken cancellationToken)
+        public override async Task<ServiceResult<bool>> BeforeInsertForEmployees(BaseClassIRE request, TDbEntity entity, CancellationToken cancellationToken)
         {
             bool exists = await Context.Set<TDbEntity>().AnyAsync(x => x.Name == request.Name, cancellationToken);
             if (exists)
@@ -76,12 +73,17 @@ namespace AniRay.Services.BaseServices.BasicEntitiesService
         #endregion
 
         #region Update - For Employees
-        public override async Task<ServiceResult<bool>> BeforeUpdateForEmployees(BaseClassEUR request, TDbEntity entity, CancellationToken cancellationToken)
+        public override async Task<ServiceResult<bool>> BeforeUpdateForEmployees(BaseClassURE request, TDbEntity entity, CancellationToken cancellationToken)
         {
-            bool exists = await Context.Set<TDbEntity>().AnyAsync(x => x.Name == request.Name && x.Id != entity.Id && !x.IsDeleted, cancellationToken);
+            var nameToCheck = request.Name?.Trim();
+            if (!string.IsNullOrEmpty(nameToCheck))
+            {
+                bool exists = await Context.Set<TDbEntity>()
+                    .AnyAsync(x => x.Name == nameToCheck && x.Id != entity.Id, cancellationToken);
 
-            if (exists)
-                return ServiceResult<bool>.Fail($"Name already exists on anohter {typeof(TDbEntity)} record");
+                if (exists)
+                    return ServiceResult<bool>.Fail($"Name already exists on another {typeof(TDbEntity)} record");
+            }
 
             return ServiceResult<bool>.Ok(true);
         }
@@ -108,7 +110,5 @@ namespace AniRay.Services.BaseServices.BasicEntitiesService
             return new OkObjectResult(new { message = "Deleted successfully." });
         }
         #endregion
-
-
     }
 }

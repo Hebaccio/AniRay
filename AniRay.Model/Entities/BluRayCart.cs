@@ -8,9 +8,6 @@ namespace AniRay.Model.Entities
 {
     public class BluRayCart
     {
-        [Key]
-        public int Id { get; set; }
-
         [ForeignKey("UserCartId")]
         public int UserCartId { get; set; }
         public UserCart UserCart { get; set; }

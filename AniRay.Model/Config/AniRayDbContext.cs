@@ -37,6 +37,29 @@ namespace AniRay.Model.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            ConfigureCompositeKeys(modelBuilder);
+            ConfigureDecimalPrecision(modelBuilder);
+            ConfigureIndexes(modelBuilder);
+            AddDataSeeders(modelBuilder);
+        }
+
+
+        private void ConfigureCompositeKeys(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<BluRayCart>()
+                .HasKey(bc => new { bc.UserCartId, bc.BluRayId });
+
+            modelBuilder.Entity<MovieGenre>()
+                .HasKey(mg => new { mg.MovieId, mg.GenreId });
+
+            modelBuilder.Entity<OrderBluRay>()
+                .HasKey(obr => new { obr.OrderId, obr.BluRayId });
+
+            modelBuilder.Entity<UserFavorites>()
+                .HasKey(uf => new { uf.UserId, uf.MovieId });
+        }
+        private void ConfigureDecimalPrecision(ModelBuilder modelBuilder)
+        {
             modelBuilder.Entity<BluRay>()
                 .Property(b => b.Price)
                 .HasPrecision(18, 2);
@@ -46,12 +69,17 @@ namespace AniRay.Model.Data
                 .HasPrecision(18, 2);
 
             modelBuilder.Entity<UserCart>()
-                .Property(o => o.FullCartPrice)
+                .Property(c => c.FullCartPrice)
                 .HasPrecision(18, 2);
-
-            AddDataSeeders(modelBuilder);
         }
-
+        private void ConfigureIndexes(ModelBuilder modelBuilder)
+        {
+            ConfigureBluRayIndexes(modelBuilder);
+        }
+        private void ConfigureBluRayIndexes(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<BluRay>().HasIndex(b => b.MovieId);
+        }
         private void AddDataSeeders(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfiguration(new SeedAudioFormat());

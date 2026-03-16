@@ -2,10 +2,9 @@
 using AniRay.Model;
 using AniRay.Model.Entities;
 using AniRay.Model.Migrations;
-using AniRay.Model.Requests.GetRequests;
 using AniRay.Model.Requests.InsertRequests;
-using AniRay.Model.Requests.SearchRequests;
 using AniRay.Model.Requests.UpdateRequests;
+using AniRay.Model.Requestss.BasicEntities;
 using AniRay.Services.EntityServices.OrderStatusService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -23,7 +22,7 @@ namespace AniRay.API.Controllers.BasicEntityControllers
         }
 
         [NonAction]
-        public override async Task<ActionResult<PagedResult<BaseClassUM>>> GetPagedEntityForUsers([FromQuery] BaseClassUSO searchObject, CancellationToken cancellationToken)
+        public override async Task<ActionResult<PagedResult<BaseClassMU>>> GetPagedEntityForUsers([FromQuery] BaseClassSOU searchObject, CancellationToken cancellationToken)
         {
             return await base.GetPagedEntityForUsers(searchObject, cancellationToken);
         }

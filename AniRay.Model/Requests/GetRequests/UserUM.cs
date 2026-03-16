@@ -1,4 +1,5 @@
 ﻿using AniRay.Model.Entities;
+using AniRay.Model.Requestss.BasicEntities;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -19,8 +20,8 @@ namespace AniRay.Model.Requests.GetRequests
         public DateOnly Birthday { get; set; }
         public DateTime CreatedAt { get; set; }
         public bool TwoFA { get; set; }
-        public BaseClassUM UserRole { get; set; }
-        public BaseClassUM UserStatus { get; set; }
-        public BaseClassUM Gender { get; set; }
+        public BaseClassMU UserRole { get; set; }
+        public BaseClassMU UserStatus { get; set; }
+        public BaseClassMU Gender { get; set; }
     }
 }

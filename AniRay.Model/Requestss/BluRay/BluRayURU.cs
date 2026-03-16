@@ -6,9 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AniRay.Model.Requests.UpdateRequests
+namespace AniRay.Model.Requestss.BluRay
 {
-    public class BluRayUUR
+    public class BluRayURU
     {
         
     }

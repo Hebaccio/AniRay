@@ -1,7 +1,4 @@
-﻿using AniRay.Model.Requests.GetRequests;
-using AniRay.Model.Requests.InsertRequests;
-using AniRay.Model.Requests.SearchRequests;
-using AniRay.Model.Requests.UpdateRequests;
+﻿using AniRay.Model.Requestss.BasicEntities;
 using AniRay.Services.BaseServices.BaseCRUDService;
 using System;
 using System.Collections.Generic;
@@ -11,10 +8,10 @@ namespace AniRay.Services.BaseServices.BasicEntitiesService
 {
     public interface IBasicEntitiesService<TdbEntity> :
         ICRUDService<
-            BaseClassUM, BaseClassEM, 
-            BaseClassUSO, BaseClassESO, 
-            BaseClassUIR, BaseClassEIR, 
-            BaseClassUUR, BaseClassEUR>
+            BaseClassMU, BaseClassME, 
+            BaseClassSOU, BaseClassSOE, 
+            BaseClassIRU, BaseClassIRE, 
+            BaseClassURU, BaseClassURE>
     {
 
     }

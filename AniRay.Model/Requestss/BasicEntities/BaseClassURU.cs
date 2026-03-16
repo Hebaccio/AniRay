@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 
-namespace AniRay.Model.Requests.InsertRequests
+namespace AniRay.Model.Requestss.BasicEntities
 {
-    public class BaseClassUIR
+    public class BaseClassURU
     {
 
     }

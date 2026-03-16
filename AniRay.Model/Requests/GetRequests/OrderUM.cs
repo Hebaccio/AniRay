@@ -1,4 +1,5 @@
 ﻿using AniRay.Model.Entities;
+using AniRay.Model.Requestss.BasicEntities;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -14,7 +15,7 @@ namespace AniRay.Model.Requests.GetRequests
         public DateTime DateTime { get; set; }
         public decimal FullPrice { get; set; }
         //public int OrderStatusId { get; set; }
-        public BaseClassUM OrderStatus { get; set; }
+        public BaseClassMU OrderStatus { get; set; }
         //public int UserId { get; set; }
         //public User User { get; set; }
         public string UserName { get; set; }
