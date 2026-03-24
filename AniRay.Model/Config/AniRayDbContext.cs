@@ -75,11 +75,48 @@ namespace AniRay.Model.Data
         private void ConfigureIndexes(ModelBuilder modelBuilder)
         {
             ConfigureBluRayIndexes(modelBuilder);
+            ConfigureMovieIndexes(modelBuilder);
+            ConfigureMovieGenreIndexes(modelBuilder);
+            ConfigureRequestIndexes(modelBuilder);
         }
+
         private void ConfigureBluRayIndexes(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<BluRay>().HasIndex(b => b.MovieId);
+            modelBuilder.Entity<BluRay>()
+                .HasIndex(b => b.MovieId);
         }
+        private void ConfigureMovieIndexes(ModelBuilder modelBuilder)
+        {
+            var entity = modelBuilder.Entity<Movie>();
+
+            entity.HasIndex(m => m.IsDeleted);
+            entity.HasIndex(m => m.Favorites);
+            entity.HasIndex(m => m.ReleaseDate);
+
+            entity.HasIndex(m => new { m.IsDeleted, m.ReleaseDate });
+            entity.HasIndex(m => new { m.IsDeleted, m.Favorites });
+
+            entity.HasIndex(m => m.Title);
+            entity.HasIndex(m => m.Studio);
+            entity.HasIndex(m => m.Director);
+        }
+        private void ConfigureMovieGenreIndexes(ModelBuilder modelBuilder)
+        {
+            var entity = modelBuilder.Entity<MovieGenre>();
+
+            entity.HasIndex(mg => mg.MovieId);
+            entity.HasIndex(mg => mg.GenreId);
+            entity.HasIndex(mg => new { mg.GenreId, mg.MovieId });
+        }
+        private void ConfigureRequestIndexes(ModelBuilder modelBuilder)
+        {
+            var entity = modelBuilder.Entity<Request>();
+
+            entity.HasIndex(m => m.Title);
+            entity.HasIndex(m => m.DateTime);
+            entity.HasIndex(m => m.UserId);
+        }
+        
         private void AddDataSeeders(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfiguration(new SeedAudioFormat());

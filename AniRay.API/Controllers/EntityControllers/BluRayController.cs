@@ -6,7 +6,7 @@ using AniRay.Model.Requests.GetRequests;
 using AniRay.Model.Requests.InsertRequests;
 using AniRay.Model.Requests.SearchRequests;
 using AniRay.Model.Requests.UpdateRequests;
-using AniRay.Model.Requestss.BluRay;
+using AniRay.Model.Requestss.BluRayRequests;
 using AniRay.Services.EntityServices.BluRayService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

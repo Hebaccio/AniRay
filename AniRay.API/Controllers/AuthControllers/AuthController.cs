@@ -3,9 +3,9 @@ using AniRay.Model.Data;
 using AniRay.Model.Entities;
 using AniRay.Model.Requests.AuthRequests;
 using AniRay.Model.Requests.GetRequests;
-using AniRay.Model.Requests.InsertRequests;
 using AniRay.Model.Requests.SearchRequests;
 using AniRay.Model.Requests.UpdateRequests;
+using AniRay.Model.Requestss.UserRequests;
 using AniRay.Services.AuthentificationServices.AuthService;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -31,7 +31,7 @@ namespace AniRay.API.Controllers.EntityControllers
         }
 
         [HttpPost("Register")]
-        public async Task<ActionResult<object>> Register(UserUIR request, CancellationToken ct)
+        public async Task<ActionResult<object>> Register(UserIRU request, CancellationToken ct)
         {
             return await _authService.Register(request, ct);
         }

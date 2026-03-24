@@ -4,7 +4,7 @@ using AniRay.Model.Entities;
 using AniRay.Model.Migrations;
 using AniRay.Model.Requests.InsertRequests;
 using AniRay.Model.Requests.UpdateRequests;
-using AniRay.Model.Requestss.BasicEntities;
+using AniRay.Model.Requestss.BasicEntitiesRequests;
 using AniRay.Services.EntityServices.OrderStatusService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;

@@ -12,7 +12,10 @@ namespace AniRay.Model.Entities
         public int Id { get; set; }
         public string Title { get; set; }
         public string Text { get; set; }
+        public string? Response { get; set; }
         public DateTime DateTime { get; set; }
+        public bool ReadByStaff { get; set; }
+        public bool ReadByUser { get; set; }
 
         [ForeignKey("UserId")]
         public int UserId { get; set; }

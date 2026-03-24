@@ -1,5 +1,5 @@
 ﻿using AniRay.Model.Entities;
-using AniRay.Model.Requestss.BluRay;
+using AniRay.Model.Requestss.BluRayRequests;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -40,9 +40,17 @@ namespace AniRay.Services.BaseServices.BaseCRUDService
             await Context.AddAsync(entity, cancellationToken);
             await Context.SaveChangesAsync(cancellationToken);
 
+            await FinalInsertUserIncludes(entity, request);
+
             var mapped = Mapper.Map<TModelUser>(entity);
             return new OkObjectResult(mapped);
         }
+
+        public virtual Task FinalInsertUserIncludes(TDbEntity entity, TInsertUser request)
+        {
+            return Task.CompletedTask;
+        }
+
         public virtual bool IsInsertForUsersAuthorized()
         {
             return true;
@@ -68,9 +76,12 @@ namespace AniRay.Services.BaseServices.BaseCRUDService
             await Context.AddAsync(entity, cancellationToken);
             await Context.SaveChangesAsync(cancellationToken);
 
+            await FinalInsertEmployeeIncludes(entity, request);
+
             var mapped = Mapper.Map<TModelEmployee>(entity);
             return new OkObjectResult(mapped);
         }
+
         public virtual bool IsInsertForEmployeesAuthorized()
         {
             return _currentUser.IsAuthenticated && _currentUser.IsWorker();
@@ -78,6 +89,10 @@ namespace AniRay.Services.BaseServices.BaseCRUDService
         public virtual async Task<ServiceResult<bool>> BeforeInsertForEmployees(TInsertEmployee request, TDbEntity entity, CancellationToken cancellationToken)
         {
             return await Task.FromResult(ServiceResult<bool>.Ok(true));
+        }
+        public virtual Task FinalInsertEmployeeIncludes(TDbEntity entity, TInsertEmployee request)
+        {
+            return Task.CompletedTask;
         }
         #endregion
 
@@ -99,9 +114,12 @@ namespace AniRay.Services.BaseServices.BaseCRUDService
 
             await Context.SaveChangesAsync(cancellationToken);
 
+            await FinalUpdateUserIncludes(entity, request);
+
             var mapped = Mapper.Map<TModelUser>(entity);
             return new OkObjectResult(mapped);
         }
+
         public virtual bool IsUpdateForUsersAuthorized()
         {
             return true;
@@ -113,6 +131,10 @@ namespace AniRay.Services.BaseServices.BaseCRUDService
         public virtual async Task<ServiceResult<bool>> BeforeUpdateForUsers(TUpdateUser request, TDbEntity entity, CancellationToken cancellationToken)
         {
             return await Task.FromResult(ServiceResult<bool>.Ok(true));
+        }
+        public virtual Task FinalUpdateUserIncludes(TDbEntity entity, TUpdateUser? request)
+        {
+            return Task.CompletedTask;
         }
         #endregion
 
@@ -136,9 +158,12 @@ namespace AniRay.Services.BaseServices.BaseCRUDService
 
             await Context.SaveChangesAsync(cancellationToken);
 
+            await FinalUpdateEmployeeIncludes(entity, request);
+
             var mapped = Mapper.Map<TModelEmployee>(entity);
             return new OkObjectResult(mapped);
         }
+
         public virtual bool IsUpdateForEmployeesAuthorized()
         {
             return _currentUser.IsAuthenticated && _currentUser.IsWorker();
@@ -146,6 +171,10 @@ namespace AniRay.Services.BaseServices.BaseCRUDService
         public virtual async Task<ServiceResult<bool>> BeforeUpdateForEmployees(TUpdateEmployee request, TDbEntity entity, CancellationToken cancellationToken)
         {
             return await Task.FromResult(ServiceResult<bool>.Ok(true));
+        }
+        public virtual Task FinalUpdateEmployeeIncludes(TDbEntity entity, TUpdateEmployee? request)
+        {
+            return Task.CompletedTask;
         }
         #endregion
 

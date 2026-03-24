@@ -1,5 +1,5 @@
 ﻿using AniRay.Model.Requests.AuthRequests;
-using AniRay.Model.Requests.InsertRequests;
+using AniRay.Model.Requestss.UserRequests;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -11,7 +11,7 @@ namespace AniRay.Services.AuthentificationServices.AuthService
 {
     public interface IAuthService
     {
-        Task<ActionResult<object>> Register(UserUIR request, CancellationToken cancellationToken);
+        Task<ActionResult<object>> Register(UserIRU request, CancellationToken cancellationToken);
         Task<ActionResult<AuthResult>> Login(LoginDto dto, CancellationToken cancellationToken);
         Task<ActionResult<AuthResult>> Verify2FA(Verify2FADto dto, CancellationToken cancellationToken);
         Task<ActionResult<AuthResult>> Refresh(RefreshRequestDto dto, CancellationToken cancellationToken);

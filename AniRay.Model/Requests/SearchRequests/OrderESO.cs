@@ -1,4 +1,6 @@
 ﻿using AniRay.Model.Entities;
+using AniRay.Model.Requestss.HelperRequests;
+using AniRay.Model.Requestss.MovieRequests;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -22,7 +24,7 @@ namespace AniRay.Model.Requests.SearchRequests
         public string? UserCityFTS { get; set; }
         public string? UserZIPFTS { get; set; }
         public OrderSortField? OrderBy { get; set; }
-        public SortType? SortType { get; set; }
+        public SortTypeEnum.SortType? SortType { get; set; }
     }
 
     public enum OrderSortField

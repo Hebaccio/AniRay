@@ -356,7 +356,7 @@ namespace AniRay.Model.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Director")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("Favorites")
                         .HasColumnType("int");
@@ -373,13 +373,29 @@ namespace AniRay.Model.Migrations
 
                     b.Property<string>("Studio")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Director");
+
+                    b.HasIndex("Favorites");
+
+                    b.HasIndex("IsDeleted");
+
+                    b.HasIndex("ReleaseDate");
+
+                    b.HasIndex("Studio");
+
+                    b.HasIndex("Title");
+
+                    b.HasIndex("IsDeleted", "Favorites");
+
+                    b.HasIndex("IsDeleted", "ReleaseDate");
 
                     b.ToTable("Movies");
                 });
@@ -395,6 +411,10 @@ namespace AniRay.Model.Migrations
                     b.HasKey("MovieId", "GenreId");
 
                     b.HasIndex("GenreId");
+
+                    b.HasIndex("MovieId");
+
+                    b.HasIndex("GenreId", "MovieId");
 
                     b.ToTable("MovieGenres");
                 });
@@ -562,18 +582,31 @@ namespace AniRay.Model.Migrations
                     b.Property<DateTime>("DateTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("ReadByStaff")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ReadByUser")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Response")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Text")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DateTime");
+
+                    b.HasIndex("Title");
 
                     b.HasIndex("UserId");
 

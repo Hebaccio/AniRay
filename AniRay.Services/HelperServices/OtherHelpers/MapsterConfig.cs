@@ -2,6 +2,8 @@
 using AniRay.Model.Requests.GetRequests;
 using AniRay.Model.Requests.InsertRequests;
 using AniRay.Model.Requests.UpdateRequests;
+using AniRay.Model.Requestss.MovieRequests;
+using AniRay.Model.Requestss.RequestRequests;
 using Mapster;
 
 namespace AniRay.Services.HelperServices.OtherHelpers
@@ -19,19 +21,19 @@ namespace AniRay.Services.HelperServices.OtherHelpers
 
         private static void RegisterRequestMappings()
         {
-            TypeAdapterConfig<Request, RequestUM>.NewConfig()
+            TypeAdapterConfig<Request, RequestMU>.NewConfig()
                 .Map(dest => dest.UserFullName, src => src.User.Name + " " + src.User.LastName)
                 .Map(dest => dest.UserMail, src => src.User.Email);
 
-            TypeAdapterConfig<Request, RequestEM>.NewConfig()
+            TypeAdapterConfig<Request, RequestME>.NewConfig()
                 .Map(dest => dest.UserFullName, src => src.User.Name + " " + src.User.LastName)
                 .Map(dest => dest.UserMail, src => src.User.Email);
         }
 
         private static void RegisterMovieMappings()
         {
-            TypeAdapterConfig<Movie, MovieUM>.NewConfig()
-                .Map(dest => dest.Genres, src => src.MovieGenres.Select(mg => mg.Genre.Name).ToList());
+            TypeAdapterConfig<Movie, MovieMU>.NewConfig()
+                .Map(dest => dest.MovieGenres, src => src.MovieGenres.Select(mg => mg.Genre.Name).ToList());
         }
 
         private static void RegisterUserFavoritesMappings()

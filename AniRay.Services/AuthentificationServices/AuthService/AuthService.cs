@@ -1,8 +1,8 @@
 ﻿using AniRay.Model.Data;
 using AniRay.Model.Entities;
 using AniRay.Model.Requests.AuthRequests;
-using AniRay.Model.Requests.GetRequests;
 using AniRay.Model.Requests.InsertRequests;
+using AniRay.Model.Requestss.UserRequests;
 using AniRay.Services.AuthentificationServices.TokenService;
 using AniRay.Services.EntityServices.UserCartService;
 using AniRay.Services.EntityServices.UserService;
@@ -44,14 +44,14 @@ namespace AniRay.Services.AuthentificationServices.AuthService
             _refreshTokenDays = int.Parse(_config["Jwt:RefreshTokenExpirationDays"]!);
         }
 
-        public async Task<ActionResult<object>> Register(UserUIR request, CancellationToken cancellationToken)
+        public async Task<ActionResult<object>> Register(UserIRU request, CancellationToken cancellationToken)
         {
             var resultUserInsert = await _userService.InsertEntityForUsers(request, cancellationToken);
 
             if (resultUserInsert.Result is not OkObjectResult okResult)
                 return resultUserInsert.Result!;
 
-            var createdUser = (UserUM)okResult.Value!;
+            var createdUser = (UserMU)okResult.Value!;
 
             UserCartUIR cart = new() { UserId = createdUser.Id };
             var resultCartInsert = await _userCartService.InsertEntityForUsers(cart, cancellationToken);

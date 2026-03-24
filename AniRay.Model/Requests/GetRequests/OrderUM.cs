@@ -1,5 +1,5 @@
 ﻿using AniRay.Model.Entities;
-using AniRay.Model.Requestss.BasicEntities;
+using AniRay.Model.Requestss.BasicEntitiesRequests;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
