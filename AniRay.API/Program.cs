@@ -1,5 +1,5 @@
+using AniRay.Model.AuthRequests;
 using AniRay.Model.Data;
-using AniRay.Model.Requests.AuthRequests;
 using AniRay.Services.AuthentificationServices.AuthService;
 using AniRay.Services.AuthentificationServices.TokenService;
 using AniRay.Services.EntityServices.AudioFormatService;

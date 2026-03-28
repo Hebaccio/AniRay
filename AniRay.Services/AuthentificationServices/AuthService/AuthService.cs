@@ -1,8 +1,8 @@
-﻿using AniRay.Model.Data;
+﻿using AniRay.Model.AuthRequests;
+using AniRay.Model.Data;
 using AniRay.Model.Entities;
-using AniRay.Model.Requests.AuthRequests;
-using AniRay.Model.Requests.InsertRequests;
-using AniRay.Model.Requestss.UserRequests;
+using AniRay.Model.Requests.UserCartRequests;
+using AniRay.Model.Requests.UserRequests;
 using AniRay.Services.AuthentificationServices.TokenService;
 using AniRay.Services.EntityServices.UserCartService;
 using AniRay.Services.EntityServices.UserService;
@@ -53,7 +53,7 @@ namespace AniRay.Services.AuthentificationServices.AuthService
 
             var createdUser = (UserMU)okResult.Value!;
 
-            UserCartUIR cart = new() { UserId = createdUser.Id };
+            UserCartIRU cart = new() { UserId = createdUser.Id };
             var resultCartInsert = await _userCartService.InsertEntityForUsers(cart, cancellationToken);
 
             if (resultCartInsert.Result is not OkObjectResult)

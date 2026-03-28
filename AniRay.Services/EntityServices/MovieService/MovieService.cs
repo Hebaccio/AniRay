@@ -1,7 +1,7 @@
 ﻿using AniRay.Model;
 using AniRay.Model.Data;
 using AniRay.Model.Entities;
-using AniRay.Model.Requestss.MovieRequests;
+using AniRay.Model.Requests.MovieRequests;
 using AniRay.Services.BaseServices.BaseCRUDService;
 using AniRay.Services.HelperServices.CurrentUserService;
 using AniRay.Services.HelperServices.OtherHelpers;
@@ -102,9 +102,9 @@ namespace AniRay.Services.EntityServices.MovieService
             if (request == null)
                 return ServiceResult<bool>.Fail("Request field cannot be null!");
 
-            var nullCheck = await BeforeInsertChecks(request, entity, cancellationToken);
-            if (!nullCheck.Success)
-                return nullCheck;
+            var validationCheck = await BeforeInsertChecks(request, entity, cancellationToken);
+            if (!validationCheck.Success)
+                return validationCheck;
 
             entity.IsDeleted = false;
             entity.Favorites = 0;

@@ -1,6 +1,5 @@
 ﻿using AniRay.Model;
 using AniRay.Model.Entities;
-using AniRay.Model.Requests.UpdateRequests;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;

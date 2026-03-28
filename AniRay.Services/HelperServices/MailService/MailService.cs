@@ -4,7 +4,7 @@ using System.Text;
 
 namespace AniRay.Services.HelperServices.MailService
 {
-    using AniRay.Model.Requests.AuthRequests;
+    using AniRay.Model.AuthRequests;
     using MailKit.Net.Smtp;
     using MailKit.Security;
     using Microsoft.Extensions.Options;

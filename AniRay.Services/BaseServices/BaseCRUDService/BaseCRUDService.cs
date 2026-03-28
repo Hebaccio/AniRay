@@ -1,6 +1,6 @@
 ﻿using AniRay.Model;
 using AniRay.Model.Data;
-using AniRay.Model.Requests.SearchRequests;
+using AniRay.Model.Requests.HelperRequests;
 using AniRay.Services.BaseServices.BaseService;
 using AniRay.Services.HelperServices.CurrentUserService;
 using MapsterMapper;
@@ -28,7 +28,7 @@ namespace AniRay.Services.BaseServices.BaseCRUDService
         #region Insert - For Users
         public virtual async Task<ActionResult<TModelUser>> InsertEntityForUsers(TInsertUser request, CancellationToken cancellationToken)
         {
-            if (!IsInsertForUsersAuthorized())
+            if (!IsDeleteForUsersAuthorized())
                 return new UnauthorizedResult();
 
             TDbEntity entity = Mapper.Map<TDbEntity>(request);
@@ -51,7 +51,7 @@ namespace AniRay.Services.BaseServices.BaseCRUDService
             return Task.CompletedTask;
         }
 
-        public virtual bool IsInsertForUsersAuthorized()
+        public virtual bool IsDeleteForUsersAuthorized()
         {
             return true;
         }

@@ -25,7 +25,8 @@ namespace AniRay.Services.HelperServices.OtherHelpers
         {
             Active = 1,
             Suspended = 2,
-            Deleted = 3
+            Deleted = 3,
+            FiredOrQuit = 4
         }
 
         public enum CoreGender

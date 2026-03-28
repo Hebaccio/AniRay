@@ -1,4 +1,4 @@
-﻿using AniRay.Model.Requestss.RequestRequests;
+﻿using AniRay.Model.Requests.RequestRequests;
 using AniRay.Services.BaseServices.BaseCRUDService;
 using System;
 using System.Collections.Generic;

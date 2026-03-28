@@ -7,7 +7,8 @@ namespace AniRay.Model.Entities
 {
     public class UserStatus : BaseClass
     {
-        
+        public bool StatusForUser { get; set; }
+        public bool StatusForEmployee { get; set; }
     }
 
 }

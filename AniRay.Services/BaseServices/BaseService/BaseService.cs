@@ -1,6 +1,6 @@
 ﻿using AniRay.Model;
 using AniRay.Model.Data;
-using AniRay.Model.Requests.SearchRequests;
+using AniRay.Model.Requests.HelperRequests;
 using AniRay.Services.HelperServices.CurrentUserService;
 using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;

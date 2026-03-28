@@ -802,6 +802,12 @@ namespace AniRay.Model.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("StatusForEmployee")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("StatusForUser")
+                        .HasColumnType("bit");
+
                     b.HasKey("Id");
 
                     b.ToTable("UserStatuses");
@@ -811,19 +817,33 @@ namespace AniRay.Model.Migrations
                         {
                             Id = 1,
                             IsDeleted = false,
-                            Name = "Active"
+                            Name = "Active",
+                            StatusForEmployee = true,
+                            StatusForUser = true
                         },
                         new
                         {
                             Id = 2,
                             IsDeleted = false,
-                            Name = "Suspended"
+                            Name = "Suspended",
+                            StatusForEmployee = false,
+                            StatusForUser = true
                         },
                         new
                         {
                             Id = 3,
                             IsDeleted = false,
-                            Name = "Deleted"
+                            Name = "Deleted",
+                            StatusForEmployee = false,
+                            StatusForUser = true
+                        },
+                        new
+                        {
+                            Id = 4,
+                            IsDeleted = false,
+                            Name = "Fired Or Quit",
+                            StatusForEmployee = true,
+                            StatusForUser = false
                         });
                 });
 

@@ -1,16 +1,10 @@
 ﻿using AniRay.API.Controllers.BaseControllers;
 using AniRay.Model;
-using AniRay.Model.Data;
 using AniRay.Model.Entities;
-using AniRay.Model.Requests.GetRequests;
-using AniRay.Model.Requests.InsertRequests;
-using AniRay.Model.Requests.SearchRequests;
-using AniRay.Model.Requests.UpdateRequests;
-using AniRay.Model.Requestss.UserRequests;
+using AniRay.Model.Requests.UserRequests;
 using AniRay.Services.EntityServices.UserService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.OpenApi.Any;
 
 namespace AniRay.API.Controllers.EntityControllers
 {
@@ -58,12 +52,6 @@ namespace AniRay.API.Controllers.EntityControllers
         public override async Task<ActionResult<UserMU>> InsertEntityForUsers(UserIRU request, CancellationToken cancellationToken)
         {
             return await base.InsertEntityForUsers(request, cancellationToken);
-        }
-
-        [NonAction]
-        public override async Task<ActionResult<UserME>> InsertEntityForEmployees(UserIRE request, CancellationToken cancellationToken)
-        {
-            return await base.InsertEntityForEmployees(request, cancellationToken);
         }
 
         [NonAction]

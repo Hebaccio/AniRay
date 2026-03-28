@@ -1,7 +1,7 @@
 ﻿using AniRay.Model;
 using AniRay.Model.Data;
 using AniRay.Model.Entities;
-using AniRay.Model.Requestss.BluRayRequests;
+using AniRay.Model.Requests.BluRayRequests;
 using AniRay.Services.BaseServices.BaseCRUDService;
 using AniRay.Services.HelperServices.CurrentUserService;
 using AniRay.Services.HelperServices.OtherHelpers;

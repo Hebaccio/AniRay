@@ -1,5 +1,5 @@
-﻿using AniRay.Model.Requests.AuthRequests;
-using AniRay.Model.Requestss.UserRequests;
+﻿using AniRay.Model.AuthRequests;
+using AniRay.Model.Requests.UserRequests;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;

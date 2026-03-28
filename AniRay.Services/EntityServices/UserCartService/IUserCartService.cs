@@ -1,18 +1,14 @@
-﻿using AniRay.Model.Entities;
-using AniRay.Model.Requests.GetRequests;
-using AniRay.Model.Requests.InsertRequests;
-using AniRay.Model.Requests.SearchRequests;
-using AniRay.Model.Requests.UpdateRequests;
+﻿using AniRay.Model.Requests.HelperRequests;
+using AniRay.Model.Requests.UserCartRequests;
 using AniRay.Services.BaseServices.BaseCRUDService;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 
 namespace AniRay.Services.EntityServices.UserCartService
 {
-    public interface IUserCartService : ICRUDService<UserCartUM, UserCartEM, BaseSO, BaseSO, UserCartUIR, UserCartEIR, UserCartUUR, UserCartEUR>
+    public interface IUserCartService : ICRUDService<UserCartMU, UserCartME, BaseSO, BaseSO, UserCartIRU, UserCartIRE, UserCartURU, UserCartURE>
     {
+        public Task<ActionResult<bool>> AddIndividualBluRayToCart(UserCartIndividualURU request, CancellationToken cancellationToken);
+        public Task<ActionResult<bool>> RemoveIndividualBluRayFromCart(int id, CancellationToken cancellationToken);
+        public Task<ActionResult<bool>> IsBluRayInCart(int id, CancellationToken cancellationToken);
     }
 }

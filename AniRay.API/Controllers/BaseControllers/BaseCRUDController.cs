@@ -1,5 +1,5 @@
 ﻿using AniRay.Model;
-using AniRay.Model.Requests.SearchRequests;
+using AniRay.Model.Requests.HelperRequests;
 using AniRay.Services.BaseServices.BaseCRUDService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;

@@ -1,13 +1,8 @@
 ﻿using AniRay.API.Controllers.BaseControllers;
 using AniRay.Model;
 using AniRay.Model.Entities;
-using AniRay.Model.Migrations;
-using AniRay.Model.Requests.InsertRequests;
-using AniRay.Model.Requests.UpdateRequests;
-using AniRay.Model.Requestss.BasicEntitiesRequests;
+using AniRay.Model.Requests.BasicEntitiesRequests;
 using AniRay.Services.EntityServices.OrderStatusService;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AniRay.API.Controllers.BasicEntityControllers

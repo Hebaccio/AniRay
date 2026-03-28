@@ -1,7 +1,7 @@
 ﻿using AniRay.Model;
 using AniRay.Model.Data;
 using AniRay.Model.Entities;
-using AniRay.Model.Requestss.RequestRequests;
+using AniRay.Model.Requests.RequestRequests;
 using AniRay.Services.BaseServices.BaseCRUDService;
 using AniRay.Services.HelperServices.CurrentUserService;
 using AniRay.Services.HelperServices.OtherHelpers;
@@ -27,19 +27,6 @@ namespace AniRay.Services.EntityServices.RequestService
         }
 
         #region Get By Id - For Users
-        public override bool IsGetByIdForUsersAuthorized()
-        {
-            return _currentUser.IsAuthenticated && _currentUser.IsUser();
-        }
-        public override IQueryable<Request> AddGetByIdFiltersForUsers(IQueryable<Request> query)
-        {
-            query = query.Where(r => r.UserId == _currentUser.UserId);
-            query = query.Include(r => r.User);
-            return query;
-        }
-        #endregion
-
-        #region Get By Id - For Employees
         //Doesn't exist because it's handled in the update
         #endregion
 
@@ -52,12 +39,17 @@ namespace AniRay.Services.EntityServices.RequestService
         {
             query = query.Where(r => r.UserId == _currentUser.UserId);
             query = query.Include(r => r.User);
+            query = query.OrderByDescending(r => r.DateTime);
             return query;
         }
         #endregion
 
         #region Get By Id - For Employees
-        //Doesn't exist because it's handled in the update
+        public override IQueryable<Request> AddGetByIdFiltersForEmployees(IQueryable<Request> query)
+        {
+            query = query.Include(r => r.User);
+            return query;
+        }
         #endregion
 
         #region Get Paged - For Employees
@@ -79,7 +71,8 @@ namespace AniRay.Services.EntityServices.RequestService
             if (search.OrderBy.HasValue)
             {
                 var sort = search.SortType?.ToString() ?? "descending";
-                var finalOrderBy = $"{search.OrderBy} {sort}";
+                var orderBy = search.OrderBy?.ToString() ?? "DateTime";
+                var finalOrderBy = $"{orderBy} {sort}";
                 query = query.OrderBy(finalOrderBy);
             }
 
@@ -90,7 +83,7 @@ namespace AniRay.Services.EntityServices.RequestService
         #endregion
 
         #region Insert - For Users
-        public override bool IsInsertForUsersAuthorized()
+        public override bool IsDeleteForUsersAuthorized()
         {
             return _currentUser.IsAuthenticated && _currentUser.IsUser();
         }
@@ -135,7 +128,7 @@ namespace AniRay.Services.EntityServices.RequestService
         }
         public override async Task<ServiceResult<bool>> BeforeUpdateForUsers(RequestURU request, Request entity, CancellationToken cancellationToken)
         {
-            if (!string.IsNullOrEmpty(entity.Response))
+            if(entity.ReadByStaff)
                 entity.ReadByUser = true;
 
             return ServiceResult<bool>.Ok(true);
@@ -150,8 +143,11 @@ namespace AniRay.Services.EntityServices.RequestService
         #region Update - For Employees
         public override async Task<ServiceResult<bool>> BeforeUpdateForEmployees(RequestURE request, Request entity, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(request.Response))
-                return ServiceResult<bool>.Fail("Response cannot be null or empty");
+            ServiceResult<bool> result;
+
+            result = UpsertHelper.ValidateStringLength(request.Response, 1, 300, "Response", false);
+            if (!result.Success) return result;
+
             entity.ReadByStaff = true;
             entity.ReadByUser = false;
 

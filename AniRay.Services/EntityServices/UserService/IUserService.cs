@@ -1,5 +1,5 @@
 ﻿using AniRay.Model.Entities;
-using AniRay.Model.Requestss.UserRequests;
+using AniRay.Model.Requests.UserRequests;
 using AniRay.Services.BaseServices.BaseCRUDService;
 using System;
 using System.Collections.Generic;

@@ -1,21 +1,7 @@
-﻿using AniRay.API.Controllers.BaseControllers;
-using AniRay.Model.Data;
-using AniRay.Model.Entities;
-using AniRay.Model.Requests.AuthRequests;
-using AniRay.Model.Requests.GetRequests;
-using AniRay.Model.Requests.SearchRequests;
-using AniRay.Model.Requests.UpdateRequests;
-using AniRay.Model.Requestss.UserRequests;
+﻿using AniRay.Model.AuthRequests;
+using AniRay.Model.Requests.UserRequests;
 using AniRay.Services.AuthentificationServices.AuthService;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
-using System;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq.Dynamic.Core;
-using System.Security.Claims;
-using static Org.BouncyCastle.Crypto.Engines.SM2Engine;
 
 namespace AniRay.API.Controllers.EntityControllers
 {

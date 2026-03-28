@@ -1,5 +1,5 @@
 ﻿using AniRay.Model;
-using AniRay.Model.Requests.SearchRequests;
+using AniRay.Model.Requests.HelperRequests;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;

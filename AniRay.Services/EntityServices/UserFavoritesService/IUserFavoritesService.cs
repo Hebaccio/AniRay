@@ -1,9 +1,7 @@
 ﻿using AniRay.Model.Entities;
-using AniRay.Model.Requests.GetRequests;
-using AniRay.Model.Requests.InsertRequests;
-using AniRay.Model.Requests.SearchRequests;
-using AniRay.Model.Requests.UpdateRequests;
+using AniRay.Model.Requests.UserFavoritesRequests;
 using AniRay.Services.BaseServices.BaseCRUDService;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +11,8 @@ using System.Threading.Tasks;
 namespace AniRay.Services.EntityServices.UserFavoritesService
 {
     public interface IUserFavoritesService : 
-        ICRUDService<UserFavoritesUM, UserFavoritesEM, UserFavoritesUSO, UserFavoritesESO, UserFavoritesUIR, UserFavoritesEIR, UserFavoritesUUR, UserFavoritesEUR>
+        ICRUDService<UserFavoritesMU, UserFavoritesME, UserFavoritesSOU, UserFavoritesSOE, UserFavoritesIRU, UserFavoritesIRE, UserFavoritesURU, UserFavoritesURE>
     {
+        public Task<ActionResult<UserFavoritesMU>> RemoveMovieFromFavorites(int? id, CancellationToken cancellationToken);
     }
 }

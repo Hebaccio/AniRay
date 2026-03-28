@@ -17,19 +17,33 @@ namespace AniRay.Model.Seeders
                     {
                         Id = 1,
                         Name = "Active",
-                        IsDeleted = false
+                        IsDeleted = false,
+                        StatusForUser = true,
+                        StatusForEmployee = true,
                     },
                     new UserStatus()
                     {
                         Id = 2,
                         Name = "Suspended",
-                        IsDeleted = false
+                        IsDeleted = false,
+                        StatusForUser = true,
+                        StatusForEmployee = false,
                     },
                     new UserStatus()
                     {
                         Id = 3,
                         Name = "Deleted",
-                        IsDeleted = false
+                        IsDeleted = false,
+                        StatusForUser = true,
+                        StatusForEmployee = false
+                    },
+                    new UserStatus()
+                    {
+                        Id = 4,
+                        Name = "Fired Or Quit",
+                        IsDeleted = false,
+                        StatusForUser = false,
+                        StatusForEmployee = true
                     }
                 );
         }

@@ -1,4 +1,5 @@
 ﻿using AniRay.Model;
+using AniRay.Model.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace AniRay.Services.HelperServices.OtherHelpers
@@ -75,7 +76,7 @@ namespace AniRay.Services.HelperServices.OtherHelpers
                 Regex(@"^\+?[0-9\s\-\(\)]{6,20}$");
 
             if (!phoneRegex.IsMatch(value))
-                return ServiceResult<bool>.Fail($"{attributeName} is not a valid phone number!");
+                return ServiceResult<bool>.Fail($"{attributeName} is not a valid phone number pattern!");
 
             return ServiceResult<bool>.Ok(true);
         }
@@ -130,6 +131,26 @@ namespace AniRay.Services.HelperServices.OtherHelpers
 
             if (!exists)
                 return ServiceResult<bool>.Fail($"{fieldName} does not exist in database.");
+
+            return ServiceResult<bool>.Ok(true);
+        }
+        public static async Task<ServiceResult<bool>> ValidateUserStatusId(DbContext context, int? foreignKeyId, int userRoleId, string fieldName, CancellationToken cancellationToken, bool nullsAllowed)
+        {
+            if (!nullsAllowed && foreignKeyId == null)
+                return ServiceResult<bool>.Fail($"{fieldName} cannot be null!");
+
+            if (nullsAllowed && foreignKeyId == null)
+                return ServiceResult<bool>.Ok(true);
+
+            var foreignKey = await context.Set<UserStatus>().FirstOrDefaultAsync(u => u.Id == foreignKeyId, cancellationToken);
+            if(foreignKey == null)
+                return ServiceResult<bool>.Fail($"{fieldName} does not exist in database.");
+
+            if (userRoleId == (int)CoreData.CoreUserRole.User && foreignKey.StatusForUser == false)
+                return ServiceResult<bool>.Fail($"Cannot attatch Employe Only Status to a User.");
+
+            if (userRoleId != (int)CoreData.CoreUserRole.User && foreignKey.StatusForEmployee == false)
+                return ServiceResult<bool>.Fail($"Cannot attatch User Only Status to an Employee.");
 
             return ServiceResult<bool>.Ok(true);
         }

@@ -2,7 +2,7 @@
 using AniRay.Model.Data;
 using AniRay.Model.Entities;
 using AniRay.Model.Migrations;
-using AniRay.Model.Requestss.UserRequests;
+using AniRay.Model.Requests.UserRequests;
 using AniRay.Services.BaseServices.BaseCRUDService;
 using AniRay.Services.HelperServices.CurrentUserService;
 using AniRay.Services.HelperServices.OtherHelpers;
@@ -33,6 +33,7 @@ namespace AniRay.Services.EntityServices.UserService
         }
         public override IQueryable<User> AddGetByIdFiltersForUsers(IQueryable<User> query)
         {
+            query = query.Where(u => u.UserStatusId == (int)CoreData.CoreUserStatus.Active);
             query = query.Include(u => u.UserRole);
             query = query.Include(u => u.UserStatus);
             query = query.Include(u => u.Gender);
@@ -48,6 +49,10 @@ namespace AniRay.Services.EntityServices.UserService
         #region Get By Id - For Employees
         public override IQueryable<User> AddGetByIdFiltersForEmployees(IQueryable<User> query)
         {
+            if (!_currentUser.IsBoss())
+            {
+                query = query.Where(u => u.UserRoleId == (int)CoreData.CoreUserRole.User);
+            }
             query = query.Include(u => u.UserRole);
             query = query.Include(u => u.UserStatus);
             query = query.Include(u => u.Gender);
@@ -84,8 +89,14 @@ namespace AniRay.Services.EntityServices.UserService
             if (search?.CreatedAtLTE != null)
                 query = query.Where(u => u.CreatedAt <= search.CreatedAtLTE);
 
-            if (search?.UserRoleId != null)
+            if (!_currentUser.IsBoss())
+            {
+                query = query.Where(u => u.UserRoleId == (int)CoreData.CoreUserRole.User);
+            }
+            else if(search?.UserRoleId != null && _currentUser.IsBoss())
+            {
                 query = query.Where(u => u.UserRoleId == search.UserRoleId);
+            }
 
             if (search?.UserStatusId != null)
                 query = query.Where(u => u.UserStatusId == search.UserStatusId);
@@ -176,9 +187,79 @@ namespace AniRay.Services.EntityServices.UserService
         }
         #endregion
 
-        //DEAL WITH THIS LATER
         #region Insert - For Employees
-        //Doesn't Exist
+        public override bool IsInsertForEmployeesAuthorized()
+        {
+            return _currentUser.IsAuthenticated && _currentUser.IsBoss();
+        }
+        public override async Task<ServiceResult<bool>> BeforeInsertForEmployees(UserIRE request, User entity, CancellationToken cancellationToken)
+        {
+            if (request == null)
+                return ServiceResult<bool>.Fail("Request cannot be null.");
+
+            var nullCheck = await BeforeInsertForEmployeesChecks(request, entity, cancellationToken);
+            if (!nullCheck.Success)
+                return nullCheck;
+
+            PasswordHelper.CreatePasswordHash(request.Password, out byte[] hash, out byte[] salt);
+            entity.PasswordHash = hash;
+            entity.PasswordSalt = salt;
+
+            entity.CreatedAt = DateTime.UtcNow;
+            entity.UserStatusId = (int)CoreUserStatus.Active;
+
+            return ServiceResult<bool>.Ok(true);
+        }
+        private async Task<ServiceResult<bool>> BeforeInsertForEmployeesChecks(UserIRE request, User entity, CancellationToken cancellationToken)
+        {
+            ServiceResult<bool> result;
+
+            //Image
+            result = UpsertHelper.ValidateStringLength(request.Pfp, 1, 300, "Image URL", false);
+            if (!result.Success) return result;
+
+            //Username
+            result = await UpsertHelper.ValidateUsernameAsync<User>(Context, request.Username, 6, 50, nameof(request.Username), _currentUser.UserId, cancellationToken, false);
+            if (!result.Success) return result;
+
+            //Name
+            result = UpsertHelper.ValidateStringLength(request.Name, 6, 20, nameof(request.Name), false);
+            if (!result.Success) return result;
+
+            //Lastname
+            result = UpsertHelper.ValidateStringLength(request.LastName, 6, 30, nameof(request.LastName), false);
+            if (!result.Success) return result;
+
+            //Email
+            result = await UpsertHelper.ValidateEmailAsync<User>(Context, request.Email, 6, 50, nameof(request.Email), _currentUser.UserId, cancellationToken, false);
+            if (!result.Success) return result;
+
+            //Password
+            result = UpsertHelper.ValidatePasswordRegex(request.Password, request.Password2, 6, 20, nameof(request.Password), false);
+            if (!result.Success) return result;
+
+            //Birthday
+            var earliestAllowedDate = new DateOnly(1900, 01, 01);
+            var today = DateOnly.FromDateTime(DateTime.Now);
+            result = UpsertHelper.ValidateDate(request.Birthday, earliestAllowedDate, today, "Birthday", false);
+            if (!result.Success) return result;
+
+            //Gender
+            result = await UpsertHelper.ValidateForeignKey<Gender>(Context, request.GenderId, nameof(Gender), cancellationToken, false);
+            if (!result.Success) return result;
+
+            //User Role
+            result = await UpsertHelper.ValidateForeignKey<UserRole>(Context, request.UserRoleId, "User Role", cancellationToken, false);
+            if (!result.Success) return result;
+
+            return ServiceResult<bool>.Ok(true);
+        }
+        public override async Task FinalInsertEmployeeIncludes(User entity, UserIRE request)
+        {
+            await Context.Set<User>().Include(u => u.UserRole).LoadAsync();
+            await Context.Set<User>().Include(u => u.UserStatus).LoadAsync();
+            await Context.Set<User>().Include(u => u.Gender).LoadAsync();
+        }
         #endregion
 
         #region Update - For Users
@@ -258,15 +339,37 @@ namespace AniRay.Services.EntityServices.UserService
             if (request == null)
                 return ServiceResult<bool>.Fail("Request cannot be null.");
 
-            var nullCheck = await BeforeUpdateForEmployeesChecks(request, entity, cancellationToken);
-            if (!nullCheck.Success)
-                return nullCheck;
+            if (_currentUser.IsBoss())
+            {
+                var nullCheck = await BeforeUpdateForEmployeesChecks(request, entity, cancellationToken);
+                if (!nullCheck.Success)
+                    return nullCheck;
 
-            return ServiceResult<bool>.Ok(true);
+                return ServiceResult<bool>.Ok(true);
+            }
+            else if (UserIsNotBoss(entity))
+            {
+                var nullCheck = await BeforeUpdateForEmployeesChecks(request, entity, cancellationToken);
+                if (!nullCheck.Success)
+                    return nullCheck;
+
+                return ServiceResult<bool>.Ok(true);
+            }
+
+            return ServiceResult<bool>.Fail("Cannot update employee data");
         }
+
+        private bool UserIsNotBoss(User entity)
+        {
+            return
+                !_currentUser.IsBoss() &&
+                (entity.UserRoleId == (int)CoreData.CoreUserRole.User) ||
+                (entity.Id == _currentUser.UserId &&
+                entity.UserStatusId != (int)CoreData.CoreUserStatus.FiredOrQuit);
+        }
+
         private async Task<ServiceResult<bool>> BeforeUpdateForEmployeesChecks(UserURE request, User entity, CancellationToken cancellationToken)
         {
-            //if user is user then go ahead, if he's employee then only boss can!
             ServiceResult<bool> result;
 
             //Image
@@ -300,7 +403,7 @@ namespace AniRay.Services.EntityServices.UserService
             if (!result.Success) return result;
 
             //UserStatusId
-            result = await UpsertHelper.ValidateForeignKey<UserStatus>(Context, request.UserStatusId, nameof(UserStatus), cancellationToken, true);
+            result = await UpsertHelper.ValidateUserStatusId(Context, request.UserStatusId, entity.UserRoleId, "User Status", cancellationToken, true);
             if (!result.Success) return result;
 
             return ServiceResult<bool>.Ok(true);
@@ -314,13 +417,13 @@ namespace AniRay.Services.EntityServices.UserService
         #endregion
 
         #region SoftDelete
-        private bool IsSoftDeleteAuthorized()
+        private bool IsSoftDeleteAuthorized(int? id)
         {
-            return _currentUser.IsAuthenticated && _currentUser.IsUser();
+            return _currentUser.IsAuthenticated && _currentUser.IsUser() && _currentUser.UserId == id;
         }
         public override async Task<ActionResult<string>> SoftDelete(int? id, CancellationToken cancellationToken)
         {
-            if (!IsSoftDeleteAuthorized())
+            if (!IsSoftDeleteAuthorized(id))
                 return new UnauthorizedResult();
 
             var entity = await Context.Set<User>().FindAsync(_currentUser.UserId, cancellationToken);
