@@ -1,3 +1,4 @@
+using AniRay.API.Filters;
 using AniRay.Model.AuthRequests;
 using AniRay.Model.Data;
 using AniRay.Services.AuthentificationServices.AuthService;
@@ -22,6 +23,7 @@ using AniRay.Services.HelperServices.OtherHelpers;
 using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerUI;
@@ -53,12 +55,15 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 MapsterConfig.RegisterMappings();
 
 // Controllers
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.Converters
-            .Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
-    });
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ExceptionFilter>();
+})
+.AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.Converters
+        .Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+});
 
 
 #region Authentication & JWT
@@ -132,6 +137,16 @@ builder.Services.AddDbContext<AniRayDbContext>(options =>
 
 builder.Services.AddMapster();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
 
 // Swagger ONLY in Development
@@ -150,6 +165,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();
