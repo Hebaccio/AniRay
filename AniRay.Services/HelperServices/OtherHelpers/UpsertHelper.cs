@@ -1,6 +1,8 @@
 ﻿using AniRay.Model;
 using AniRay.Model.Entities;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using static AniRay.Services.HelperServices.OtherHelpers.CoreData;
 
 namespace AniRay.Services.HelperServices.OtherHelpers
 {
@@ -134,7 +136,7 @@ namespace AniRay.Services.HelperServices.OtherHelpers
 
             return ServiceResult<bool>.Ok(true);
         }
-        public static async Task<ServiceResult<bool>> ValidateUserStatusId(DbContext context, int? foreignKeyId, int userRoleId, string fieldName, CancellationToken cancellationToken, bool nullsAllowed)
+        public static async Task<ServiceResult<bool>> ValidateUserStatusId(DbContext context, int? foreignKeyId, int userRoleId, int userId, string fieldName, CancellationToken cancellationToken, bool nullsAllowed)
         {
             if (!nullsAllowed && foreignKeyId == null)
                 return ServiceResult<bool>.Fail($"{fieldName} cannot be null!");
@@ -151,6 +153,15 @@ namespace AniRay.Services.HelperServices.OtherHelpers
 
             if (userRoleId != (int)CoreData.CoreUserRole.User && foreignKey.StatusForEmployee == false)
                 return ServiceResult<bool>.Fail($"Cannot attatch User Only Status to an Employee.");
+
+            if(foreignKeyId != (int)CoreData.CoreUserStatus.Active)
+            {
+                var token = await context.Set<RefreshToken>().FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
+                if (token == null)
+                    return ServiceResult<bool>.Fail("Token not found in database");
+
+                token.Revoked = true;
+            }
 
             return ServiceResult<bool>.Ok(true);
         }

@@ -358,7 +358,6 @@ namespace AniRay.Services.EntityServices.UserService
 
             return ServiceResult<bool>.Fail("Cannot update employee data");
         }
-
         private bool UserIsNotBoss(User entity)
         {
             return
@@ -367,7 +366,6 @@ namespace AniRay.Services.EntityServices.UserService
                 (entity.Id == _currentUser.UserId &&
                 entity.UserStatusId != (int)CoreData.CoreUserStatus.FiredOrQuit);
         }
-
         private async Task<ServiceResult<bool>> BeforeUpdateForEmployeesChecks(UserURE request, User entity, CancellationToken cancellationToken)
         {
             ServiceResult<bool> result;
@@ -403,7 +401,7 @@ namespace AniRay.Services.EntityServices.UserService
             if (!result.Success) return result;
 
             //UserStatusId
-            result = await UpsertHelper.ValidateUserStatusId(Context, request.UserStatusId, entity.UserRoleId, "User Status", cancellationToken, true);
+            result = await UpsertHelper.ValidateUserStatusId(Context, request.UserStatusId, entity.UserRoleId, entity.Id, "User Status", cancellationToken, true);
             if (!result.Success) return result;
 
             return ServiceResult<bool>.Ok(true);
@@ -417,20 +415,24 @@ namespace AniRay.Services.EntityServices.UserService
         #endregion
 
         #region SoftDelete
-        private bool IsSoftDeleteAuthorized(int? id)
+        private bool IsSoftDeleteAuthorized()
         {
-            return _currentUser.IsAuthenticated && _currentUser.IsUser() && _currentUser.UserId == id;
+            return _currentUser.IsAuthenticated && _currentUser.IsUser();
         }
         public override async Task<ActionResult<string>> SoftDelete(int? id, CancellationToken cancellationToken)
         {
-            if (!IsSoftDeleteAuthorized(id))
+            if (!IsSoftDeleteAuthorized())
                 return new UnauthorizedResult();
 
             var entity = await Context.Set<User>().FindAsync(_currentUser.UserId, cancellationToken);
             if (entity == null)
                 return new NotFoundObjectResult(new { message = "User not found in the database." });
+            var token = await Context.Set<RefreshToken>().FirstOrDefaultAsync(x => x.UserId == _currentUser.UserId, cancellationToken);
+            if (token == null)
+                return new NotFoundObjectResult(new { message = "Token not found in the database." });
 
             entity.UserStatusId = (int)CoreUserStatus.Deleted;
+            token.Revoked = true;
             await Context.SaveChangesAsync(cancellationToken);
 
             return new OkObjectResult(new { message = $"User {entity.Name} {entity.LastName} is successfully deleted." });

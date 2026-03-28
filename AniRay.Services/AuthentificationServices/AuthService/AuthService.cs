@@ -1,4 +1,5 @@
-﻿using AniRay.Model.AuthRequests;
+﻿using AniRay.Model;
+using AniRay.Model.AuthRequests;
 using AniRay.Model.Data;
 using AniRay.Model.Entities;
 using AniRay.Model.Requests.UserCartRequests;
@@ -78,11 +79,14 @@ namespace AniRay.Services.AuthentificationServices.AuthService
             var user = await _context.Users.AsNoTracking().Include(u => u.UserRole)
                 .SingleOrDefaultAsync(u => u.Email == dto.Email, cancellationToken);
             if (user == null)
-                return new UnauthorizedResult();
+                throw new AuthException("Email or password is incorrect");
+
+            if(user.UserStatusId != (int)CoreData.CoreUserStatus.Active)
+                throw new AuthException("User is no longer Active");
 
             var isPasswordValid = PasswordHelper.VerifyPassword(dto.Password, user.PasswordHash, user.PasswordSalt);
             if (!isPasswordValid)
-                return new UnauthorizedResult();
+                throw new AuthException("Email or password is incorrect");
 
             if (user.TwoFA)
                 return await HandleTwoFactor(user, cancellationToken);
@@ -95,7 +99,7 @@ namespace AniRay.Services.AuthentificationServices.AuthService
                 .FirstOrDefaultAsync(x => x.UserId == dto.UserId, cancellationToken);
 
             if (userCode == null)
-                return new UnauthorizedResult();
+                throw new AuthException("No code sent to the user!");
 
             var sentCode = TwoFactorAuthHelper.Hash2FA(dto.Code, userCode.CreatedAt);
 
@@ -107,13 +111,12 @@ namespace AniRay.Services.AuthentificationServices.AuthService
                 {
                     _context.twoWayAuths.Remove(userCode);
                     await _context.SaveChangesAsync(cancellationToken);
-                    return new UnauthorizedResult();
+                    throw new AuthException("Failed 3rd attempt, log in again and wait for the code to be sent!");
                 }
 
                 _context.twoWayAuths.Update(userCode);
                 await _context.SaveChangesAsync(cancellationToken);
-
-                return new UnauthorizedResult();
+                throw new AuthException("Codes do not match, try again!");
             }
 
             _context.twoWayAuths.Remove(userCode);
@@ -123,7 +126,7 @@ namespace AniRay.Services.AuthentificationServices.AuthService
                 .FirstOrDefaultAsync(u => u.Id == dto.UserId, cancellationToken);
 
             if (user == null)
-                return new UnauthorizedResult();
+                throw new AuthException("User doesn't exist!");
 
             return await GenerateAuthTokens(user, cancellationToken);
         }
@@ -136,16 +139,16 @@ namespace AniRay.Services.AuthentificationServices.AuthService
                 .SingleOrDefaultAsync(t => t.Token == dto.RefreshToken, cancellationToken);
 
             if (stored == null || stored.Revoked || stored.Expires < DateTime.UtcNow)
-                return new UnauthorizedResult();
+                throw new AuthException("No refresh token found for the user or token is expired/revoked!");
 
             var principal = _tokenService.GetPrincipalFromExpiredToken(dto.AccessToken);
 
             if (principal == null)
-                return new UnauthorizedResult();
+                throw new AuthException("Access token is invalid or malformed!");
 
             var userIdFromAccessToken = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userIdFromAccessToken != stored.UserId.ToString())
-                return new UnauthorizedResult();
+                throw new AuthException("No id found in access token!");
 
             stored.Revoked = true;
 
@@ -175,13 +178,9 @@ namespace AniRay.Services.AuthentificationServices.AuthService
                 .SingleOrDefaultAsync(t => t.Token == dto.RefreshToken, cancellationToken);
 
             if (token == null)
-                return new NotFoundObjectResult("Refresh token not found.");
-
-            if (token.Revoked)
-                return new BadRequestObjectResult("Refresh token already revoked.");
+                throw new AuthException("Refresh token not found!");
 
             token.Revoked = true;
-
             await _context.SaveChangesAsync(cancellationToken);
 
             return new OkResult();
