@@ -19,6 +19,7 @@ using AniRay.Services.EntityServices.UserStatusService;
 using AniRay.Services.EntityServices.VideoFormatService;
 using AniRay.Services.HelperServices.CurrentUserService;
 using AniRay.Services.HelperServices.MailService;
+using AniRay.Services.HelperServices.NotificationThing;
 using AniRay.Services.HelperServices.OtherHelpers;
 using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -51,6 +52,18 @@ builder.Services.AddScoped<IUserCartService, UserCartService>();
 builder.Services.AddScoped<IRequestService, RequestService>();
 builder.Services.AddScoped<IUserFavoritesService, UserFavoritesService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+
+builder.Services.AddSingleton<BluRayNotificationService>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<BluRayNotificationService>());
+
+builder.Services.AddSingleton<IMessageProducer, MessageProducer>();
+builder.Services.AddHostedService<EmailConsumerService>();
+
+builder.Services.Configure<RabbitMqDetails>(
+    builder.Configuration.GetSection("RabbitMQ"));
+
+builder.Services.AddSingleton(resolver =>
+    resolver.GetRequiredService<IOptions<RabbitMqDetails>>().Value);
 
 MapsterConfig.RegisterMappings();
 

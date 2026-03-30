@@ -4,6 +4,7 @@ using AniRay.Model.Entities;
 using AniRay.Model.Requests.BluRayRequests;
 using AniRay.Services.BaseServices.BaseCRUDService;
 using AniRay.Services.HelperServices.CurrentUserService;
+using AniRay.Services.HelperServices.NotificationThing;
 using AniRay.Services.HelperServices.OtherHelpers;
 using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;
@@ -15,10 +16,13 @@ namespace AniRay.Services.EntityServices.BluRayService
     public class BluRayService : BaseCRUDService<BluRayMU, BluRayME, BluRaySOU, BluRaySOE, BluRay, BluRayIRU, BluRayIRE, BluRayURU, BluRayURE>, IBluRayService
     {
         private readonly ICurrentUserService _currentUser;
+        private readonly BluRayNotificationService _service;
+        //Maybe do the constructor thing
 
-        public BluRayService(AniRayDbContext context, IMapper mapper, ICurrentUserService currentUser) : base(context, mapper, currentUser)
+        public BluRayService(AniRayDbContext context, IMapper mapper, ICurrentUserService currentUser, BluRayNotificationService service) : base(context, mapper, currentUser)
         {
             _currentUser = currentUser;
+            _service = service;
         }
 
         #region Get By Id - For Users
@@ -157,13 +161,13 @@ namespace AniRay.Services.EntityServices.BluRayService
             if (request == null)
                 return ServiceResult<bool>.Fail("Blu Ray cannot be null");
 
-            var nullCheck = await BeforeUpdateChecks(request, entity.MovieId , cancellationToken);
+            var nullCheck = await BeforeUpdateChecks(request, entity.InStock, entity.Id, entity.MovieId , cancellationToken);
             if (!nullCheck.Success)
                 return nullCheck;
 
             return ServiceResult<bool>.Ok(true);
         }
-        private async Task<ServiceResult<bool>> BeforeUpdateChecks(BluRayURE request, int movieId, CancellationToken cancellationToken)
+        private async Task<ServiceResult<bool>> BeforeUpdateChecks(BluRayURE request, int inStock, int bluRayId, int movieId, CancellationToken cancellationToken)
         {
             ServiceResult<bool> result;
 
@@ -213,6 +217,11 @@ namespace AniRay.Services.EntityServices.BluRayService
             var sixMonthsFromNow = today.AddMonths(6);
             result = UpsertHelper.ValidateDate(request.ReleaseDate, entity.ReleaseDate, sixMonthsFromNow, "BluRay Release Date", true);
             if (!result.Success) return result;
+
+            if(inStock == 0 && request.InStock > 0)
+            {
+                _ = _service.AddNotificationJob(bluRayId); // fire-and-forget
+            }
 
             return ServiceResult<bool>.Ok(true);
         }
