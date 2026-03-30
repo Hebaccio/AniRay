@@ -32,6 +32,7 @@ namespace AniRay.Model.Data
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<UserCart> UserCarts { get; set; }
         public DbSet<TwoWayAuth> twoWayAuths { get; set; }
+        public DbSet<UserBluRayNotifications> UserBluRayNotifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -57,6 +58,9 @@ namespace AniRay.Model.Data
 
             modelBuilder.Entity<UserFavorites>()
                 .HasKey(uf => new { uf.UserId, uf.MovieId });
+
+            modelBuilder.Entity<UserBluRayNotifications>()
+                .HasKey(uf => new { uf.UserId, uf.BluRayId });
         }
         private void ConfigureDecimalPrecision(ModelBuilder modelBuilder)
         {
@@ -78,6 +82,7 @@ namespace AniRay.Model.Data
             ConfigureMovieIndexes(modelBuilder);
             ConfigureMovieGenreIndexes(modelBuilder);
             ConfigureRequestIndexes(modelBuilder);
+            ConfigureUserBluRayNotificationIndexes(modelBuilder);
         }
 
         private void ConfigureBluRayIndexes(ModelBuilder modelBuilder)
@@ -116,7 +121,13 @@ namespace AniRay.Model.Data
             entity.HasIndex(m => m.DateTime);
             entity.HasIndex(m => m.UserId);
         }
-        
+        private void ConfigureUserBluRayNotificationIndexes(ModelBuilder modelBuilder)
+        {
+            var entity = modelBuilder.Entity<UserBluRayNotifications>();
+
+            entity.HasIndex(m => new { m.UserId, m.BluRayId, m.EmailSent });
+        }
+
         private void AddDataSeeders(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfiguration(new SeedAudioFormat());

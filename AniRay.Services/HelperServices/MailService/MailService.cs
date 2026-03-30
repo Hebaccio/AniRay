@@ -9,7 +9,6 @@ namespace AniRay.Services.HelperServices.MailService
     using MailKit.Security;
     using Microsoft.Extensions.Options;
     using MimeKit;
-    //using System.Net.Mail;
 
     public class MailService : IMailService
     {
