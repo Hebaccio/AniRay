@@ -17,7 +17,6 @@ namespace AniRay.Services.EntityServices.BluRayService
     {
         private readonly ICurrentUserService _currentUser;
         private readonly BluRayNotificationService _service;
-        //Maybe do the constructor thing
 
         public BluRayService(AniRayDbContext context, IMapper mapper, ICurrentUserService currentUser, BluRayNotificationService service) : base(context, mapper, currentUser)
         {
@@ -218,9 +217,10 @@ namespace AniRay.Services.EntityServices.BluRayService
             result = UpsertHelper.ValidateDate(request.ReleaseDate, entity.ReleaseDate, sixMonthsFromNow, "BluRay Release Date", true);
             if (!result.Success) return result;
 
-            if(inStock == 0 && request.InStock > 0)
+            //if (inStock == 0 && request.InStock > 0)
+            if (request.InStock != null)
             {
-                _ = _service.AddNotificationJob(bluRayId); // fire-and-forget
+                _ = Task.Run(async () => { await _service.RunNotificationJob(bluRayId); });
             }
 
             return ServiceResult<bool>.Ok(true);

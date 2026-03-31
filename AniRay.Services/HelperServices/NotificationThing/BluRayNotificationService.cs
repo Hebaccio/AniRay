@@ -1,7 +1,6 @@
 ﻿using AniRay.Model.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -11,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace AniRay.Services.HelperServices.NotificationThing
 {
-    public class BluRayNotificationService : BackgroundService
+    public class BluRayNotificationService
     {
         private readonly ILogger<BluRayNotificationService> _logger;
         private readonly IServiceScopeFactory _scopeFactory;
@@ -27,34 +26,30 @@ namespace AniRay.Services.HelperServices.NotificationThing
             _producer = producer;
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        public async Task RunNotificationJob(int bluRayId)
         {
-            // This is just a loop waiting for "triggered jobs"
-            // We'll trigger it by calling AddNotificationJob(...) from your BluRay update
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                // Wait briefly to reduce CPU usage
-                await Task.Delay(500, stoppingToken);
-            }
-        }
+            _logger.LogInformation($"+++++++++++++++++++++++++++++++++++++++++++++++++");
+            _logger.LogInformation($"Notification job triggered for BluRay {bluRayId}.");
+            _logger.LogInformation($"+++++++++++++++++++++++++++++++++++++++++++++++++");
 
-        // This method can be called by your BluRay update
-        public async Task AddNotificationJob(int bluRayId)
-        {
-            await Task.Delay(5000);
             using var scope = _scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AniRayDbContext>();
 
             var usersToNotify = await db.UserBluRayNotifications
-                .Include(n => n.User).Include(n=> n.BluRay)
-                .Where(n => n.BluRayId == bluRayId && !n.EmailSent)
+                .Include(n => n.User)
+                .Include(n => n.BluRay)
+                .Where(n => n.BluRayId == bluRayId && !n.EmailSent && !n.EmailQueued)
                 .ToListAsync();
 
-            // For now, just log to verify it works
-            _logger.LogInformation($"Trigger received for BluRay {bluRayId}, {usersToNotify.Count} users to notify.");
+            if (usersToNotify.Count == 0)
+            {
+                _logger.LogInformation("No users to notify. Job finished.");
+                return;
+            }
 
-            // Later: create EmailJob batches & push to RabbitMQ here
-            int batchSize = 100; // adjust as needed
+            _logger.LogInformation($"Found {usersToNotify.Count} users to notify for BluRay {bluRayId}.");
+
+            int batchSize = 1;
             var batches = usersToNotify
                 .Select((user, index) => new { user, index })
                 .GroupBy(x => x.index / batchSize)
@@ -63,17 +58,36 @@ namespace AniRay.Services.HelperServices.NotificationThing
 
             foreach (var batch in batches)
             {
-                var emailJobs = batch.Select(u => new EmailJobDto
+                try
                 {
-                    ToEmail = u.User.Email,
-                    Subject = $"BluRay Back in Stock: {u.BluRay.Title}",
-                    Body = $"Hello {u.User.Name},<br>The BluRay \"{u.BluRay.Title}\" is now available in stock!"
-                }).ToList();
+                    var emailJobs = batch.Select(u => new EmailJobDto
+                    {
+                        ToEmail = u.User.Email,
+                        Subject = $"BluRay Back in Stock: {u.BluRay.Title}",
+                        Body = $"Hello {u.User.Name} {u.User.LastName},<br>The BluRay \"{u.BluRay.Title}\" is now available in stock!",
+                        UserId = u.UserId,
+                        BluRayId = u.BluRayId
+                    }).ToList();
 
-                // Send this batch to RabbitMQ
-                await _producer.SendMessage("email_queue", emailJobs);
-                _logger.LogInformation($"Batch of {emailJobs.Count} email jobs sent to queue.");
+                    await _producer.SendMessage("email_queue", emailJobs);
+                    _logger.LogInformation($"Batch of {emailJobs.Count} email jobs sent to queue.");
+
+                    foreach (var notif in batch)
+                    {
+                        notif.EmailQueued = true;
+                    }
+
+                    await db.SaveChangesAsync();
+
+                    await Task.Delay(5000);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error sending batch. Continuing with next batch.");
+                }
             }
+
+            _logger.LogInformation("All batches processed. Job complete.");
         }
     }
 }

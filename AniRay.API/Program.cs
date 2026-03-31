@@ -54,7 +54,7 @@ builder.Services.AddScoped<IUserFavoritesService, UserFavoritesService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 
 builder.Services.AddSingleton<BluRayNotificationService>();
-builder.Services.AddHostedService(sp => sp.GetRequiredService<BluRayNotificationService>());
+//builder.Services.AddHostedService(sp => sp.GetRequiredService<BluRayNotificationService>());
 
 builder.Services.AddSingleton<IMessageProducer, MessageProducer>();
 builder.Services.AddHostedService<EmailConsumerService>();

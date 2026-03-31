@@ -17,6 +17,7 @@ namespace AniRay.Model.Entities
         public int BluRayId { get; set; }
         public BluRay BluRay { get; set; }
 
+        public bool EmailQueued { get; set; } = false;
         public bool EmailSent { get; set; } = false;
     }
 }

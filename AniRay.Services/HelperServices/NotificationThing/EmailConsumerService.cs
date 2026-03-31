@@ -67,14 +67,13 @@ namespace AniRay.Services.HelperServices.NotificationThing
                         {
                             try
                             {
+                                await Task.Delay(5000);
                                 await mailService.SendEmailAsync(job.ToEmail, job.Subject, job.Body);
 
                                 var notification = await db.UserBluRayNotifications
-                                    .Include(n => n.User)
-                                    .Include(n => n.BluRay)
                                     .FirstOrDefaultAsync(n =>
-                                        n.User.Email == job.ToEmail &&
-                                        n.BluRay.Title == job.Subject);
+                                        n.UserId == job.UserId &&
+                                        n.BluRayId == job.BluRayId);
 
                                 if (notification != null)
                                     notification.EmailSent = true;

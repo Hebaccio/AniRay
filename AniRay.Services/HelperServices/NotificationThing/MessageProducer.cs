@@ -50,7 +50,9 @@ namespace AniRay.Services.HelperServices.NotificationThing
                 basicProperties: new BasicProperties { Persistent = true },
                 body: body);
 
+            _logger.LogInformation($"+++++++++++++++++++++++++++++++++++++++++++++++++");
             _logger.LogDebug($"Sent message on queue {queue} : {jsonString}");
+            _logger.LogInformation($"+++++++++++++++++++++++++++++++++++++++++++++++++");
         }
     }
 }
