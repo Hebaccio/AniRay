@@ -16,7 +16,7 @@ namespace AniRay.API.Filters
         {
             _logger.LogError(context.Exception, context.Exception.Message);
 
-            if(context.Exception is AuthException)
+            if (context.Exception is AuthException)
             {
                 context.ModelState.AddModelError("authError", context.Exception.Message);
                 context.HttpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;

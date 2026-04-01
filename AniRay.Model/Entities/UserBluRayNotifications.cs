@@ -19,5 +19,6 @@ namespace AniRay.Model.Entities
 
         public bool EmailQueued { get; set; } = false;
         public bool EmailFailed { get; set; } = false;
+        public int FailureCountBeforeQueueing { get; set; } = 0;
     }
 }
