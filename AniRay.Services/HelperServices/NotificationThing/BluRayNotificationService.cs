@@ -28,36 +28,34 @@ namespace AniRay.Services.HelperServices.NotificationThing
 
         public async Task RunNotificationJob(int bluRayId)
         {
-            _logger.LogInformation($"+++++++++++++++++++++++++++++++++++++++++++++++++");
+            _logger.LogInformation("+++++++++++++++++++++++++++++++++++++++++++++++++");
             _logger.LogInformation($"Notification job triggered for BluRay {bluRayId}.");
-            _logger.LogInformation($"+++++++++++++++++++++++++++++++++++++++++++++++++");
+            _logger.LogInformation("+++++++++++++++++++++++++++++++++++++++++++++++++");
+            await Task.Delay(100000);
 
             using var scope = _scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AniRayDbContext>();
 
-            var usersToNotify = await db.UserBluRayNotifications
-                .Include(n => n.User)
-                .Include(n => n.BluRay)
-                .Where(n => n.BluRayId == bluRayId && !n.EmailSent && !n.EmailQueued)
-                .ToListAsync();
+            int batchSize = 20;
 
-            if (usersToNotify.Count == 0)
+            while (true)
             {
-                _logger.LogInformation("No users to notify. Job finished.");
-                return;
-            }
+                var batch = await db.UserBluRayNotifications
+                    .Include(n => n.User)
+                    .Include(n => n.BluRay)
+                    .Where(n => n.BluRayId == bluRayId && (!n.EmailQueued || (n.EmailQueued && n.EmailFailed)))
+                    .OrderBy(n => n.UserId)
+                    .Take(batchSize)
+                    .ToListAsync();
 
-            _logger.LogInformation($"Found {usersToNotify.Count} users to notify for BluRay {bluRayId}.");
+                if (batch.Count == 0)
+                {
+                    _logger.LogInformation("No more users to notify. Job finished.");
+                    break;
+                }
 
-            int batchSize = 1;
-            var batches = usersToNotify
-                .Select((user, index) => new { user, index })
-                .GroupBy(x => x.index / batchSize)
-                .Select(g => g.Select(x => x.user).ToList())
-                .ToList();
+                _logger.LogInformation($"Processing batch of {batch.Count} users for BluRay {bluRayId}.");
 
-            foreach (var batch in batches)
-            {
                 try
                 {
                     var emailJobs = batch.Select(u => new EmailJobDto
@@ -70,20 +68,19 @@ namespace AniRay.Services.HelperServices.NotificationThing
                     }).ToList();
 
                     await _producer.SendMessage("email_queue", emailJobs);
-                    _logger.LogInformation($"Batch of {emailJobs.Count} email jobs sent to queue.");
 
                     foreach (var notif in batch)
-                    {
                         notif.EmailQueued = true;
-                    }
-
+                    
                     await db.SaveChangesAsync();
 
-                    await Task.Delay(5000);
+                    _logger.LogInformation("Batch processed successfully.");
+
+                    await Task.Delay(1500);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error sending batch. Continuing with next batch.");
+                    _logger.LogError(ex, "Error sending batch. Retrying next batch...");
                 }
             }
 

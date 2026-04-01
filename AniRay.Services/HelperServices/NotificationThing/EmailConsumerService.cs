@@ -1,4 +1,5 @@
 ﻿using AniRay.Model.Data;
+using AniRay.Model.Entities;
 using AniRay.Services.HelperServices.MailService;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +30,8 @@ namespace AniRay.Services.HelperServices.NotificationThing
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
+            await Task.Delay(2000);
+
             var factory = new ConnectionFactory
             {
                 HostName = _rabbitMqDetails.Host,
@@ -47,53 +50,76 @@ namespace AniRay.Services.HelperServices.NotificationThing
                 autoDelete: false,
                 arguments: null);
 
+            await channel.BasicQosAsync(
+                prefetchSize: 0,
+                prefetchCount: 1,
+                global: false);
+
             var consumer = new AsyncEventingBasicConsumer(channel);
+
+            var semaphore = new SemaphoreSlim(5);
 
             consumer.ReceivedAsync += async (sender, eventArgs) =>
             {
                 var body = eventArgs.Body.ToArray();
                 var messageString = Encoding.UTF8.GetString(body);
 
-                try
+                var emailJobs = JsonSerializer.Deserialize<List<EmailJobDto>>(messageString);
+                if (emailJobs != null && emailJobs.Count > 0)
                 {
-                    var emailJobs = JsonSerializer.Deserialize<List<EmailJobDto>>(messageString);
-                    if (emailJobs != null && emailJobs.Count > 0)
+                    using var scope = _scopeFactory.CreateScope();
+                    var db = scope.ServiceProvider.GetRequiredService<AniRayDbContext>();
+                    var mailService = scope.ServiceProvider.GetRequiredService<IMailService>();
+
+                    var failedNotifications = new List<UserBluRayNotifications>();
+                    var notificationsToRemove = new List<UserBluRayNotifications>();
+
+                    var tasks = emailJobs.Select(async job =>
                     {
-                        using var scope = _scopeFactory.CreateScope();
-                        var db = scope.ServiceProvider.GetRequiredService<AniRayDbContext>();
-                        var mailService = scope.ServiceProvider.GetRequiredService<IMailService>();
-
-                        foreach (var job in emailJobs)
+                        await semaphore.WaitAsync();
+                        try
                         {
-                            try
-                            {
-                                await Task.Delay(5000);
-                                await mailService.SendEmailAsync(job.ToEmail, job.Subject, job.Body);
+                            await mailService.SendEmailAsync(job.ToEmail, job.Subject, job.Body);
+                            _logger.LogInformation($"Email sent to: {job.ToEmail}");
 
-                                var notification = await db.UserBluRayNotifications
-                                    .FirstOrDefaultAsync(n =>
-                                        n.UserId == job.UserId &&
-                                        n.BluRayId == job.BluRayId);
+                            var notification = await db.UserBluRayNotifications
+                                .FirstOrDefaultAsync(n => n.UserId == job.UserId && n.BluRayId == job.BluRayId);
 
-                                if (notification != null)
-                                    notification.EmailSent = true;
-
-                                await db.SaveChangesAsync();
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.LogError(ex, $"Failed to send email to {job.ToEmail}");
-                            }
+                            if (notification != null)
+                                notificationsToRemove.Add(notification);
                         }
-                    }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, $"Failed to send email to {job.ToEmail}");
 
-                    await channel.BasicAckAsync(eventArgs.DeliveryTag, multiple: false);
+                            var notification = await db.UserBluRayNotifications
+                                .FirstOrDefaultAsync(n => n.UserId == job.UserId && n.BluRayId == job.BluRayId);
+
+                            if (notification != null)
+                                failedNotifications.Add(notification);
+                        }
+                        finally
+                        {
+                            semaphore.Release();
+                        }
+                    });
+
+                    await Task.WhenAll(tasks);
+
+                    //if (notificationsToRemove.Count > 0)
+                    //    db.RemoveRange(notificationsToRemove);
+
+                    foreach (var fail in notificationsToRemove)
+                        fail.EmailFailed = false;
+
+                    foreach (var fail in failedNotifications)
+                        fail.EmailFailed = true;
+
+                    if (notificationsToRemove.Count > 0 || failedNotifications.Count > 0)
+                        await db.SaveChangesAsync();
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to process email batch");
-                    await channel.BasicNackAsync(eventArgs.DeliveryTag, multiple: false, requeue: true);
-                }
+
+                await channel.BasicAckAsync(eventArgs.DeliveryTag, multiple: false);
             };
 
             await channel.BasicConsumeAsync(

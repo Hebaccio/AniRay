@@ -1,11 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace AniRay.Services.HelperServices.NotificationThing
 {
@@ -30,8 +26,8 @@ namespace AniRay.Services.HelperServices.NotificationThing
                 Password = _rabbitMqDetails.Password,
             };
 
-            await using var connection = await factory.CreateConnectionAsync();
-            await using var channel = await connection.CreateChannelAsync();
+            var connection = await factory.CreateConnectionAsync();
+            var channel = await connection.CreateChannelAsync();
 
             await channel.QueueDeclareAsync(
                 queue: queue,

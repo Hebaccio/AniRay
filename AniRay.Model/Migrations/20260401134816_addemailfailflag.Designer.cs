@@ -4,6 +4,7 @@ using AniRay.Model.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AniRay.Model.Migrations
 {
     [DbContext(typeof(AniRayDbContext))]
-    partial class AniRayDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260401134816_addemailfailflag")]
+    partial class addemailfailflag
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -177,27 +180,6 @@ namespace AniRay.Model.Migrations
                     b.HasIndex("BluRayId");
 
                     b.ToTable("BluRayCarts");
-                });
-
-            modelBuilder.Entity("AniRay.Model.Entities.BluRayNotificationTrigger", b =>
-                {
-                    b.Property<int>("Key")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Key"));
-
-                    b.Property<int>("BluRayId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("Trigger")
-                        .HasColumnType("bit");
-
-                    b.HasKey("Key");
-
-                    b.HasIndex("BluRayId");
-
-                    b.ToTable("BluRayNotificationTriggers");
                 });
 
             modelBuilder.Entity("AniRay.Model.Entities.Gender", b =>
@@ -981,17 +963,6 @@ namespace AniRay.Model.Migrations
                     b.Navigation("BluRay");
 
                     b.Navigation("UserCart");
-                });
-
-            modelBuilder.Entity("AniRay.Model.Entities.BluRayNotificationTrigger", b =>
-                {
-                    b.HasOne("AniRay.Model.Entities.BluRay", "BluRay")
-                        .WithMany()
-                        .HasForeignKey("BluRayId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("BluRay");
                 });
 
             modelBuilder.Entity("AniRay.Model.Entities.MovieGenre", b =>

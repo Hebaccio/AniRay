@@ -33,6 +33,7 @@ namespace AniRay.Model.Data
         public DbSet<UserCart> UserCarts { get; set; }
         public DbSet<TwoWayAuth> twoWayAuths { get; set; }
         public DbSet<UserBluRayNotifications> UserBluRayNotifications { get; set; }
+        public DbSet<BluRayNotificationTrigger> BluRayNotificationTriggers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -125,7 +126,7 @@ namespace AniRay.Model.Data
         {
             var entity = modelBuilder.Entity<UserBluRayNotifications>();
 
-            entity.HasIndex(m => new { m.UserId, m.BluRayId, m.EmailSent });
+            entity.HasIndex(m => new { m.UserId, m.BluRayId });
         }
 
         private void AddDataSeeders(ModelBuilder modelBuilder)
