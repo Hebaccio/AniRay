@@ -1,7 +1,6 @@
 ﻿using AniRay.Model;
 using AniRay.Model.Data;
 using AniRay.Model.Entities;
-using AniRay.Model.Migrations;
 using AniRay.Model.Requests.HelperRequests;
 using AniRay.Model.Requests.UserCartRequests;
 using AniRay.Services.BaseServices.BaseCRUDService;

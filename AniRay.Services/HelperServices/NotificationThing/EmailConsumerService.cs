@@ -2,11 +2,13 @@
 using AniRay.Model.Entities;
 using AniRay.Services.HelperServices.MailService;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
 
@@ -17,6 +19,7 @@ namespace AniRay.Services.HelperServices.NotificationThing
         private readonly ILogger<EmailConsumerService> _logger;
         private readonly RabbitMqDetails _rabbitMqDetails;
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly SemaphoreSlim _semaphore = new(5);
 
         public EmailConsumerService(
             ILogger<EmailConsumerService> logger,
@@ -30,105 +33,130 @@ namespace AniRay.Services.HelperServices.NotificationThing
 
         protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            await Task.Delay(2000);
+            await Task.Delay(2000, cancellationToken);
 
             var factory = new ConnectionFactory
             {
                 HostName = _rabbitMqDetails.Host,
                 UserName = _rabbitMqDetails.User,
-                VirtualHost = _rabbitMqDetails.VirtualHost,
                 Password = _rabbitMqDetails.Password,
+                VirtualHost = _rabbitMqDetails.VirtualHost,
             };
 
             await using var connection = await factory.CreateConnectionAsync(cancellationToken);
             await using var channel = await connection.CreateChannelAsync();
 
+            await SetupQueueAsync(channel);
+
+            var consumer = new AsyncEventingBasicConsumer(channel);
+            consumer.ReceivedAsync += async (sender, eventArgs) =>
+                await HandleMessageAsync(channel, eventArgs);
+
+            await channel.BasicConsumeAsync(
+                queue: "bluray_notifications_email_queue",
+                autoAck: false,
+                consumer: consumer);
+
+            while (!cancellationToken.IsCancellationRequested)
+                await Task.Delay(1000, cancellationToken);
+        }
+
+        private async Task SetupQueueAsync(IChannel channel)
+        {
             await channel.QueueDeclareAsync(
-                queue: "email_queue",
+                queue: "bluray_notifications_email_queue",
                 durable: true,
                 exclusive: false,
                 autoDelete: false,
                 arguments: null);
 
             await channel.BasicQosAsync(
-                prefetchSize: 0,
-                prefetchCount: 1,
+                prefetchSize: 0, 
+                prefetchCount: 1, 
                 global: false);
-
-            var consumer = new AsyncEventingBasicConsumer(channel);
-
-            var semaphore = new SemaphoreSlim(5);
-
-            consumer.ReceivedAsync += async (sender, eventArgs) =>
+        }
+        private async Task HandleMessageAsync(IChannel channel, BasicDeliverEventArgs eventArgs)
+        {
+            var emailJobs = DeserializeMessage(eventArgs.Body.ToArray());
+            if (emailJobs == null || emailJobs.Count == 0)
             {
-                var body = eventArgs.Body.ToArray();
-                var messageString = Encoding.UTF8.GetString(body);
+                await channel.BasicAckAsync(eventArgs.DeliveryTag, false);
+                return;
+            }
 
-                var emailJobs = JsonSerializer.Deserialize<List<EmailJobDto>>(messageString);
-                if (emailJobs != null && emailJobs.Count > 0)
-                {
-                    using var scope = _scopeFactory.CreateScope();
-                    var db = scope.ServiceProvider.GetRequiredService<AniRayDbContext>();
-                    var mailService = scope.ServiceProvider.GetRequiredService<IMailService>();
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AniRayDbContext>();
+            var mailService = scope.ServiceProvider.GetRequiredService<IMailService>();
 
-                    var failedNotifications = new List<UserBluRayNotifications>();
-                    var notificationsToRemove = new List<UserBluRayNotifications>();
+            var allNotifications = await FetchNotificationsAsync(db, emailJobs);
+            var notificationLookup = allNotifications.ToDictionary(n => (n.UserId, n.BluRayId));
 
-                    var tasks = emailJobs.Select(async job =>
-                    {
-                        await semaphore.WaitAsync();
-                        try
-                        {
-                            await mailService.SendEmailAsync(job.ToEmail, job.Subject, job.Body);
-                            _logger.LogInformation($"Email sent to: {job.ToEmail}");
+            var failedNotifications = new ConcurrentBag<UserBluRayNotifications>();
+            var notificationsToRemove = new ConcurrentBag<UserBluRayNotifications>();
 
-                            var notification = await db.UserBluRayNotifications
-                                .FirstOrDefaultAsync(n => n.UserId == job.UserId && n.BluRayId == job.BluRayId);
+            var tasks = emailJobs.Select(job => 
+            ProcessEmailJobAsync(job, mailService, notificationLookup, failedNotifications, notificationsToRemove));
+            await Task.WhenAll(tasks);
 
-                            if (notification != null)
-                                notificationsToRemove.Add(notification);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, $"Failed to send email to {job.ToEmail}");
+            await SaveResultsAsync(db, failedNotifications, notificationsToRemove);
 
-                            var notification = await db.UserBluRayNotifications
-                                .FirstOrDefaultAsync(n => n.UserId == job.UserId && n.BluRayId == job.BluRayId);
+            await channel.BasicAckAsync(eventArgs.DeliveryTag, false);
+        }
+        private static List<EmailJobDto>? DeserializeMessage(byte[] body)
+        {
+            var messageString = Encoding.UTF8.GetString(body);
+            return JsonSerializer.Deserialize<List<EmailJobDto>>(messageString);
+        }
+        private static async Task<List<UserBluRayNotifications>> FetchNotificationsAsync(
+            AniRayDbContext db, List<EmailJobDto> emailJobs)
+        {
+            var userIds = emailJobs.Select(j => j.UserId).Distinct().ToList();
+            var bluRayIds = emailJobs.Select(j => j.BluRayId).Distinct().ToList();
 
-                            if (notification != null)
-                                failedNotifications.Add(notification);
-                        }
-                        finally
-                        {
-                            semaphore.Release();
-                        }
-                    });
+            return await db.UserBluRayNotifications
+                .Where(n => userIds.Contains(n.UserId) && bluRayIds.Contains(n.BluRayId))
+                .ToListAsync();
+        }
+        private async Task ProcessEmailJobAsync(
+            EmailJobDto job,
+            IMailService mailService,
+            Dictionary<(int, int), UserBluRayNotifications> notificationLookup,
+            ConcurrentBag<UserBluRayNotifications> failedNotifications,
+            ConcurrentBag<UserBluRayNotifications> notificationsToRemove)
+        {
+            await _semaphore.WaitAsync();
+            try
+            {
+                await mailService.SendEmailAsync(job.ToEmail, job.Subject, job.Body);
+                _logger.LogInformation($"Email sent to: {job.ToEmail}");
 
-                    await Task.WhenAll(tasks);
+                if (notificationLookup.TryGetValue((job.UserId, job.BluRayId), out var notification))
+                    notificationsToRemove.Add(notification);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Failed to send email to {job.ToEmail}");
+                if (notificationLookup.TryGetValue((job.UserId, job.BluRayId), out var notification))
+                    failedNotifications.Add(notification);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+        private static async Task SaveResultsAsync(
+            AniRayDbContext db,
+            ConcurrentBag<UserBluRayNotifications> failedNotifications,
+            ConcurrentBag<UserBluRayNotifications> notificationsToRemove)
+        {
+            if (notificationsToRemove.Count > 0)
+                db.RemoveRange(notificationsToRemove);
 
-                    //if (notificationsToRemove.Count > 0)
-                    //    db.RemoveRange(notificationsToRemove);
+            foreach (var fail in failedNotifications)
+                fail.FailureCountBeforeSending++;
 
-                    foreach (var fail in notificationsToRemove)
-                        fail.EmailFailed = false;
-
-                    foreach (var fail in failedNotifications)
-                        fail.EmailFailed = true;
-
-                    if (notificationsToRemove.Count > 0 || failedNotifications.Count > 0)
-                        await db.SaveChangesAsync();
-                }
-
-                await channel.BasicAckAsync(eventArgs.DeliveryTag, multiple: false);
-            };
-
-            await channel.BasicConsumeAsync(
-                queue: "email_queue",
-                autoAck: false,
-                consumer: consumer);
-
-            while (!cancellationToken.IsCancellationRequested)
-                await Task.Delay(1000, cancellationToken);
+            if (notificationsToRemove.Count > 0 || failedNotifications.Count > 0)
+                await db.SaveChangesAsync();
         }
     }
 }

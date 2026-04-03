@@ -1,11 +1,5 @@
-﻿using AniRay.API.Controllers.BaseControllers;
-using AniRay.Model;
-using AniRay.Model.Entities;
-using AniRay.Model.Migrations;
-using AniRay.Model.Requests.BasicEntitiesRequests;
+﻿using AniRay.Model.Requests.BasicEntitiesRequests;
 using AniRay.Services.BaseServices.BasicEntitiesService;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AniRay.API.Controllers.BaseControllers

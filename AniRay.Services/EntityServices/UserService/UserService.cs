@@ -1,7 +1,6 @@
 ﻿using AniRay.Model;
 using AniRay.Model.Data;
 using AniRay.Model.Entities;
-using AniRay.Model.Migrations;
 using AniRay.Model.Requests.UserRequests;
 using AniRay.Services.BaseServices.BaseCRUDService;
 using AniRay.Services.HelperServices.CurrentUserService;
@@ -10,8 +9,6 @@ using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Dynamic.Core;
-using System.Threading;
-using System.Threading.Tasks;
 using static AniRay.Services.HelperServices.OtherHelpers.CoreData;
 
 namespace AniRay.Services.EntityServices.UserService

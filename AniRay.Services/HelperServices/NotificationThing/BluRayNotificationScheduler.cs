@@ -10,7 +10,7 @@ public class BluRayNotificationScheduler : BackgroundService
     private readonly ILogger<BluRayNotificationScheduler> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly BluRayNotificationService _notificationService;
-    private readonly TimeSpan _interval = TimeSpan.FromSeconds(20);
+    private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
 
     public BluRayNotificationScheduler(
         ILogger<BluRayNotificationScheduler> logger,
@@ -24,7 +24,7 @@ public class BluRayNotificationScheduler : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await Task.Delay(5000, stoppingToken);
+        await Task.Delay(1000, stoppingToken);
         _logger.LogInformation("BluRayNotificationScheduler started.");
 
         while (!stoppingToken.IsCancellationRequested)
@@ -53,7 +53,7 @@ public class BluRayNotificationScheduler : BackgroundService
                         {
                             try
                             {
-                                await _notificationService.RunNotificationJob(bluRayId);
+                                await _notificationService.RunNotificationJob(bluRayId, "bluray_notifications_email_queue");
                             }
                             catch (Exception ex)
                             {

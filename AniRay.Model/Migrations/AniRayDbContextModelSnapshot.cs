@@ -735,13 +735,13 @@ namespace AniRay.Model.Migrations
                     b.Property<int>("BluRayId")
                         .HasColumnType("int");
 
-                    b.Property<bool>("EmailFailed")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("EmailQueued")
                         .HasColumnType("bit");
 
                     b.Property<int>("FailureCountBeforeQueueing")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FailureCountBeforeSending")
                         .HasColumnType("int");
 
                     b.HasKey("UserId", "BluRayId");

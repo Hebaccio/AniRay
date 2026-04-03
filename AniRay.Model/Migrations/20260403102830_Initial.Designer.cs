@@ -12,15 +12,15 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AniRay.Model.Migrations
 {
     [DbContext(typeof(AniRayDbContext))]
-    [Migration("20260217181602_addedtwowayauth")]
-    partial class addedtwowayauth
+    [Migration("20260403102830_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.2")
+                .HasAnnotation("ProductVersion", "8.0.6")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -136,8 +136,8 @@ namespace AniRay.Model.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<DateTime>("ReleaseDate")
-                        .HasColumnType("datetime2");
+                    b.Property<DateOnly>("ReleaseDate")
+                        .HasColumnType("date");
 
                     b.Property<int>("Runtime")
                         .HasColumnType("int");
@@ -166,33 +166,41 @@ namespace AniRay.Model.Migrations
 
             modelBuilder.Entity("AniRay.Model.Entities.BluRayCart", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Amount")
+                    b.Property<int>("UserCartId")
                         .HasColumnType("int");
 
                     b.Property<int>("BluRayId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("UserCartId")
+                    b.Property<int>("Amount")
                         .HasColumnType("int");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
+                    b.HasKey("UserCartId", "BluRayId");
 
                     b.HasIndex("BluRayId");
 
-                    b.HasIndex("UserCartId");
-
-                    b.HasIndex("UserId");
-
                     b.ToTable("BluRayCarts");
+                });
+
+            modelBuilder.Entity("AniRay.Model.Entities.BluRayNotificationTrigger", b =>
+                {
+                    b.Property<int>("Key")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Key"));
+
+                    b.Property<int>("BluRayId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Trigger")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Key");
+
+                    b.HasIndex("BluRayId");
+
+                    b.ToTable("BluRayNotificationTriggers");
                 });
 
             modelBuilder.Entity("AniRay.Model.Entities.Gender", b =>
@@ -372,7 +380,7 @@ namespace AniRay.Model.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Director")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("Favorites")
                         .HasColumnType("int");
@@ -389,36 +397,48 @@ namespace AniRay.Model.Migrations
 
                     b.Property<string>("Studio")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Director");
+
+                    b.HasIndex("Favorites");
+
+                    b.HasIndex("IsDeleted");
+
+                    b.HasIndex("ReleaseDate");
+
+                    b.HasIndex("Studio");
+
+                    b.HasIndex("Title");
+
+                    b.HasIndex("IsDeleted", "Favorites");
+
+                    b.HasIndex("IsDeleted", "ReleaseDate");
 
                     b.ToTable("Movies");
                 });
 
             modelBuilder.Entity("AniRay.Model.Entities.MovieGenre", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int>("MovieId")
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("GenreId")
                         .HasColumnType("int");
 
-                    b.Property<int>("MovieId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
+                    b.HasKey("MovieId", "GenreId");
 
                     b.HasIndex("GenreId");
 
                     b.HasIndex("MovieId");
+
+                    b.HasIndex("GenreId", "MovieId");
 
                     b.ToTable("MovieGenres");
                 });
@@ -456,14 +476,6 @@ namespace AniRay.Model.Migrations
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
-                    b.Property<string>("UserMail")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("UserNotes")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -487,26 +499,18 @@ namespace AniRay.Model.Migrations
 
             modelBuilder.Entity("AniRay.Model.Entities.OrderBluRay", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Amount")
+                    b.Property<int>("OrderId")
                         .HasColumnType("int");
 
                     b.Property<int>("BluRayId")
                         .HasColumnType("int");
 
-                    b.Property<int>("OrderId")
+                    b.Property<int>("Amount")
                         .HasColumnType("int");
 
-                    b.HasKey("Id");
+                    b.HasKey("OrderId", "BluRayId");
 
                     b.HasIndex("BluRayId");
-
-                    b.HasIndex("OrderId");
 
                     b.ToTable("OrderBluRays");
                 });
@@ -602,40 +606,35 @@ namespace AniRay.Model.Migrations
                     b.Property<DateTime>("DateTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("ReadByStaff")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ReadByUser")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Response")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Text")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Requests");
-                });
-
-            modelBuilder.Entity("AniRay.Model.Entities.RequestUser", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("RequestId")
-                        .HasColumnType("int");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RequestId");
+                    b.HasIndex("DateTime");
+
+                    b.HasIndex("Title");
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RequestUsers");
+                    b.ToTable("Requests");
                 });
 
             modelBuilder.Entity("AniRay.Model.Entities.TwoWayAuth", b =>
@@ -645,6 +644,9 @@ namespace AniRay.Model.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Attempt")
+                        .HasColumnType("int");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -728,6 +730,32 @@ namespace AniRay.Model.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("AniRay.Model.Entities.UserBluRayNotifications", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BluRayId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("EmailQueued")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("FailureCountBeforeQueueing")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FailureCountBeforeSending")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "BluRayId");
+
+                    b.HasIndex("BluRayId");
+
+                    b.HasIndex("UserId", "BluRayId");
+
+                    b.ToTable("UserBluRayNotifications");
+                });
+
             modelBuilder.Entity("AniRay.Model.Entities.UserCart", b =>
                 {
                     b.Property<int>("Id")
@@ -739,6 +767,10 @@ namespace AniRay.Model.Migrations
                     b.Property<string>("CartNotes")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("FullCartPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -752,23 +784,15 @@ namespace AniRay.Model.Migrations
 
             modelBuilder.Entity("AniRay.Model.Entities.UserFavorites", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int>("UserId")
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("MovieId")
                         .HasColumnType("int");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
+                    b.HasKey("UserId", "MovieId");
 
                     b.HasIndex("MovieId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("UserFavorites");
                 });
@@ -828,6 +852,12 @@ namespace AniRay.Model.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("StatusForEmployee")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("StatusForUser")
+                        .HasColumnType("bit");
+
                     b.HasKey("Id");
 
                     b.ToTable("UserStatuses");
@@ -837,19 +867,33 @@ namespace AniRay.Model.Migrations
                         {
                             Id = 1,
                             IsDeleted = false,
-                            Name = "Active"
+                            Name = "Active",
+                            StatusForEmployee = true,
+                            StatusForUser = true
                         },
                         new
                         {
                             Id = 2,
                             IsDeleted = false,
-                            Name = "Suspended"
+                            Name = "Suspended",
+                            StatusForEmployee = false,
+                            StatusForUser = true
                         },
                         new
                         {
                             Id = 3,
                             IsDeleted = false,
-                            Name = "Deleted"
+                            Name = "Deleted",
+                            StatusForEmployee = false,
+                            StatusForUser = true
+                        },
+                        new
+                        {
+                            Id = 4,
+                            IsDeleted = false,
+                            Name = "Fired Or Quit",
+                            StatusForEmployee = true,
+                            StatusForUser = false
                         });
                 });
 
@@ -934,19 +978,26 @@ namespace AniRay.Model.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AniRay.Model.Entities.UserCart", null)
+                    b.HasOne("AniRay.Model.Entities.UserCart", "UserCart")
                         .WithMany("BluRay")
-                        .HasForeignKey("UserCartId");
-
-                    b.HasOne("AniRay.Model.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("UserCartId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("BluRay");
 
-                    b.Navigation("User");
+                    b.Navigation("UserCart");
+                });
+
+            modelBuilder.Entity("AniRay.Model.Entities.BluRayNotificationTrigger", b =>
+                {
+                    b.HasOne("AniRay.Model.Entities.BluRay", "BluRay")
+                        .WithMany()
+                        .HasForeignKey("BluRayId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BluRay");
                 });
 
             modelBuilder.Entity("AniRay.Model.Entities.MovieGenre", b =>
@@ -1017,21 +1068,13 @@ namespace AniRay.Model.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("AniRay.Model.Entities.RequestUser", b =>
+            modelBuilder.Entity("AniRay.Model.Entities.Request", b =>
                 {
-                    b.HasOne("AniRay.Model.Entities.Request", "Request")
-                        .WithMany()
-                        .HasForeignKey("RequestId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("AniRay.Model.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Request");
 
                     b.Navigation("User");
                 });
@@ -1072,6 +1115,25 @@ namespace AniRay.Model.Migrations
                     b.Navigation("UserRole");
 
                     b.Navigation("UserStatus");
+                });
+
+            modelBuilder.Entity("AniRay.Model.Entities.UserBluRayNotifications", b =>
+                {
+                    b.HasOne("AniRay.Model.Entities.BluRay", "BluRay")
+                        .WithMany()
+                        .HasForeignKey("BluRayId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AniRay.Model.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BluRay");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("AniRay.Model.Entities.UserCart", b =>

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace AniRay.Model.Migrations
 {
     /// <inheritdoc />
-    public partial class initial : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -19,7 +19,8 @@ namespace AniRay.Model.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -32,7 +33,8 @@ namespace AniRay.Model.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -45,7 +47,8 @@ namespace AniRay.Model.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -59,12 +62,13 @@ namespace AniRay.Model.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Image = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ReleaseDate = table.Column<DateOnly>(type: "date", nullable: false),
                     Favorites = table.Column<int>(type: "int", nullable: false),
-                    Studio = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Director = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Studio = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Director = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -77,26 +81,12 @@ namespace AniRay.Model.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_OrderStatuses", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Requests",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Text = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    DateTime = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Requests", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -105,7 +95,8 @@ namespace AniRay.Model.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -118,7 +109,10 @@ namespace AniRay.Model.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    StatusForUser = table.Column<bool>(type: "bit", nullable: false),
+                    StatusForEmployee = table.Column<bool>(type: "bit", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -131,7 +125,8 @@ namespace AniRay.Model.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -142,14 +137,12 @@ namespace AniRay.Model.Migrations
                 name: "MovieGenres",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
                     MovieId = table.Column<int>(type: "int", nullable: false),
                     GenreId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MovieGenres", x => x.Id);
+                    table.PrimaryKey("PK_MovieGenres", x => new { x.MovieId, x.GenreId });
                     table.ForeignKey(
                         name: "FK_MovieGenres_Genres_GenreId",
                         column: x => x.GenreId,
@@ -175,10 +168,11 @@ namespace AniRay.Model.Migrations
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     LastName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Password = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Birthday = table.Column<DateOnly>(type: "date", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     TwoFA = table.Column<bool>(type: "bit", nullable: false),
+                    PasswordHash = table.Column<byte[]>(type: "varbinary(max)", nullable: false),
+                    PasswordSalt = table.Column<byte[]>(type: "varbinary(max)", nullable: false),
                     UserRoleId = table.Column<int>(type: "int", nullable: false),
                     UserStatusId = table.Column<int>(type: "int", nullable: false),
                     GenderId = table.Column<int>(type: "int", nullable: false)
@@ -215,7 +209,7 @@ namespace AniRay.Model.Migrations
                     Image = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ReleaseDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReleaseDate = table.Column<DateOnly>(type: "date", nullable: false),
                     VideoFormatId = table.Column<int>(type: "int", nullable: false),
                     AudioFormatId = table.Column<int>(type: "int", nullable: false),
                     MovieId = table.Column<int>(type: "int", nullable: false),
@@ -223,7 +217,8 @@ namespace AniRay.Model.Migrations
                     Runtime = table.Column<int>(type: "int", nullable: false),
                     InStock = table.Column<int>(type: "int", nullable: false),
                     SubtitleLanguage = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Price = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false)
+                    Price = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -258,9 +253,9 @@ namespace AniRay.Model.Migrations
                     FullPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     OrderStatusId = table.Column<int>(type: "int", nullable: false),
                     UserId = table.Column<int>(type: "int", nullable: false),
-                    UserName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UserMail = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UserPhone = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserCountry = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserCity = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UserZIP = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UserAdress = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UserNotes = table.Column<string>(type: "nvarchar(max)", nullable: false)
@@ -307,25 +302,67 @@ namespace AniRay.Model.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "RequestUsers",
+                name: "Requests",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Title = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Text = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Response = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DateTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReadByStaff = table.Column<bool>(type: "bit", nullable: false),
+                    ReadByUser = table.Column<bool>(type: "bit", nullable: false),
+                    UserId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Requests", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Requests_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "twoWayAuths",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     UserId = table.Column<int>(type: "int", nullable: false),
-                    RequestId = table.Column<int>(type: "int", nullable: false)
+                    Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Attempt = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_RequestUsers", x => x.Id);
+                    table.PrimaryKey("PK_twoWayAuths", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_RequestUsers_Requests_RequestId",
-                        column: x => x.RequestId,
-                        principalTable: "Requests",
+                        name: "FK_twoWayAuths_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserCarts",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    FullCartPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    CartNotes = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserCarts", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_RequestUsers_Users_UserId",
+                        name: "FK_UserCarts_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
@@ -336,14 +373,12 @@ namespace AniRay.Model.Migrations
                 name: "UserFavorites",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
                     UserId = table.Column<int>(type: "int", nullable: false),
                     MovieId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_UserFavorites", x => x.Id);
+                    table.PrimaryKey("PK_UserFavorites", x => new { x.UserId, x.MovieId });
                     table.ForeignKey(
                         name: "FK_UserFavorites_Movies_MovieId",
                         column: x => x.MovieId,
@@ -359,26 +394,46 @@ namespace AniRay.Model.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "BluRayCarts",
+                name: "BluRayNotificationTriggers",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Key = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<int>(type: "int", nullable: false),
                     BluRayId = table.Column<int>(type: "int", nullable: false),
-                    Amount = table.Column<int>(type: "int", nullable: false)
+                    Trigger = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_BluRayCarts", x => x.Id);
+                    table.PrimaryKey("PK_BluRayNotificationTriggers", x => x.Key);
                     table.ForeignKey(
-                        name: "FK_BluRayCarts_BluRays_BluRayId",
+                        name: "FK_BluRayNotificationTriggers_BluRays_BluRayId",
+                        column: x => x.BluRayId,
+                        principalTable: "BluRays",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserBluRayNotifications",
+                columns: table => new
+                {
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    BluRayId = table.Column<int>(type: "int", nullable: false),
+                    EmailQueued = table.Column<bool>(type: "bit", nullable: false),
+                    FailureCountBeforeQueueing = table.Column<int>(type: "int", nullable: false),
+                    FailureCountBeforeSending = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserBluRayNotifications", x => new { x.UserId, x.BluRayId });
+                    table.ForeignKey(
+                        name: "FK_UserBluRayNotifications_BluRays_BluRayId",
                         column: x => x.BluRayId,
                         principalTable: "BluRays",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_BluRayCarts_Users_UserId",
+                        name: "FK_UserBluRayNotifications_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
@@ -389,15 +444,13 @@ namespace AniRay.Model.Migrations
                 name: "OrderBluRays",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
                     OrderId = table.Column<int>(type: "int", nullable: false),
                     BluRayId = table.Column<int>(type: "int", nullable: false),
                     Amount = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_OrderBluRays", x => x.Id);
+                    table.PrimaryKey("PK_OrderBluRays", x => new { x.OrderId, x.BluRayId });
                     table.ForeignKey(
                         name: "FK_OrderBluRays_BluRays_BluRayId",
                         column: x => x.BluRayId,
@@ -412,95 +465,122 @@ namespace AniRay.Model.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "BluRayCarts",
+                columns: table => new
+                {
+                    UserCartId = table.Column<int>(type: "int", nullable: false),
+                    BluRayId = table.Column<int>(type: "int", nullable: false),
+                    Amount = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BluRayCarts", x => new { x.UserCartId, x.BluRayId });
+                    table.ForeignKey(
+                        name: "FK_BluRayCarts_BluRays_BluRayId",
+                        column: x => x.BluRayId,
+                        principalTable: "BluRays",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_BluRayCarts_UserCarts_UserCartId",
+                        column: x => x.UserCartId,
+                        principalTable: "UserCarts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.InsertData(
                 table: "AudioFormat",
-                columns: new[] { "Id", "Name" },
+                columns: new[] { "Id", "IsDeleted", "Name" },
                 values: new object[,]
                 {
-                    { 1, "Dolby TrueHD" },
-                    { 2, "DTS-HD Master Audio" },
-                    { 3, "Dolby Digital" },
-                    { 4, "DTS" },
-                    { 5, "LPCM" },
-                    { 6, "Dolby Atmos" },
-                    { 7, "DTS:X" },
-                    { 8, "Mono" },
-                    { 9, "Stereo" }
+                    { 1, false, "Dolby TrueHD" },
+                    { 2, false, "DTS-HD Master Audio" },
+                    { 3, false, "Dolby Digital" },
+                    { 4, false, "DTS" },
+                    { 5, false, "LPCM" },
+                    { 6, false, "Dolby Atmos" },
+                    { 7, false, "DTS:X" },
+                    { 8, false, "Mono" },
+                    { 9, false, "Stereo" }
                 });
 
             migrationBuilder.InsertData(
                 table: "Genders",
-                columns: new[] { "Id", "Name" },
+                columns: new[] { "Id", "IsDeleted", "Name" },
                 values: new object[,]
                 {
-                    { 1, "Male" },
-                    { 2, "Female" }
+                    { 1, false, "Male" },
+                    { 2, false, "Female" }
                 });
 
             migrationBuilder.InsertData(
                 table: "Genres",
-                columns: new[] { "Id", "Name" },
+                columns: new[] { "Id", "IsDeleted", "Name" },
                 values: new object[,]
                 {
-                    { 1, "Action" },
-                    { 2, "Adventure" },
-                    { 3, "Comedy" },
-                    { 4, "Drama" },
-                    { 5, "Ecchi" },
-                    { 6, "Fantasy" },
-                    { 7, "Horror" },
-                    { 8, "Mahou Shojo" },
-                    { 9, "Mecha" },
-                    { 10, "Music" },
-                    { 11, "Mystery" },
-                    { 12, "Psychological" },
-                    { 13, "Romance" },
-                    { 14, "Sci-Fi" },
-                    { 15, "Slice Of Life" },
-                    { 16, "Sports" },
-                    { 17, "Supernatural" },
-                    { 18, "Thriller" }
+                    { 1, false, "Action" },
+                    { 2, false, "Adventure" },
+                    { 3, false, "Comedy" },
+                    { 4, false, "Drama" },
+                    { 5, false, "Ecchi" },
+                    { 6, false, "Fantasy" },
+                    { 7, false, "Horror" },
+                    { 8, false, "Mahou Shojo" },
+                    { 9, false, "Mecha" },
+                    { 10, false, "Music" },
+                    { 11, false, "Mystery" },
+                    { 12, false, "Psychological" },
+                    { 13, false, "Romance" },
+                    { 14, false, "Sci-Fi" },
+                    { 15, false, "Slice Of Life" },
+                    { 16, false, "Sports" },
+                    { 17, false, "Supernatural" },
+                    { 18, false, "Thriller" }
                 });
 
             migrationBuilder.InsertData(
                 table: "OrderStatuses",
-                columns: new[] { "Id", "Name" },
+                columns: new[] { "Id", "IsDeleted", "Name" },
                 values: new object[,]
                 {
-                    { 1, "In Progress" },
-                    { 2, "Cancelled" },
-                    { 3, "Rejected" },
-                    { 4, "Processed" }
+                    { 1, false, "In Progress" },
+                    { 2, false, "Cancelled" },
+                    { 3, false, "Rejected" },
+                    { 4, false, "Processed" }
                 });
 
             migrationBuilder.InsertData(
                 table: "UserRoles",
-                columns: new[] { "Id", "Name" },
+                columns: new[] { "Id", "IsDeleted", "Name" },
                 values: new object[,]
                 {
-                    { 1, "Admin" },
-                    { 2, "User" }
+                    { 1, false, "User" },
+                    { 2, false, "Employee" },
+                    { 3, false, "Boss" }
                 });
 
             migrationBuilder.InsertData(
                 table: "UserStatuses",
-                columns: new[] { "Id", "Name" },
+                columns: new[] { "Id", "IsDeleted", "Name", "StatusForEmployee", "StatusForUser" },
                 values: new object[,]
                 {
-                    { 1, "Active" },
-                    { 2, "Suspended" },
-                    { 3, "Deleted" }
+                    { 1, false, "Active", true, true },
+                    { 2, false, "Suspended", false, true },
+                    { 3, false, "Deleted", false, true },
+                    { 4, false, "Fired Or Quit", true, false }
                 });
 
             migrationBuilder.InsertData(
                 table: "VideoFormat",
-                columns: new[] { "Id", "Name" },
+                columns: new[] { "Id", "IsDeleted", "Name" },
                 values: new object[,]
                 {
-                    { 1, "720p" },
-                    { 2, "1080p" },
-                    { 3, "1080i" },
-                    { 4, "2160p (4k)" }
+                    { 1, false, "720p" },
+                    { 2, false, "1080p" },
+                    { 3, false, "1080i" },
+                    { 4, false, "2160p (4k)" }
                 });
 
             migrationBuilder.CreateIndex(
@@ -509,9 +589,9 @@ namespace AniRay.Model.Migrations
                 column: "BluRayId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_BluRayCarts_UserId",
-                table: "BluRayCarts",
-                column: "UserId");
+                name: "IX_BluRayNotificationTriggers_BluRayId",
+                table: "BluRayNotificationTriggers",
+                column: "BluRayId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BluRays_AudioFormatId",
@@ -534,19 +614,59 @@ namespace AniRay.Model.Migrations
                 column: "GenreId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_MovieGenres_GenreId_MovieId",
+                table: "MovieGenres",
+                columns: new[] { "GenreId", "MovieId" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_MovieGenres_MovieId",
                 table: "MovieGenres",
                 column: "MovieId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Movies_Director",
+                table: "Movies",
+                column: "Director");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Movies_Favorites",
+                table: "Movies",
+                column: "Favorites");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Movies_IsDeleted",
+                table: "Movies",
+                column: "IsDeleted");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Movies_IsDeleted_Favorites",
+                table: "Movies",
+                columns: new[] { "IsDeleted", "Favorites" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Movies_IsDeleted_ReleaseDate",
+                table: "Movies",
+                columns: new[] { "IsDeleted", "ReleaseDate" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Movies_ReleaseDate",
+                table: "Movies",
+                column: "ReleaseDate");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Movies_Studio",
+                table: "Movies",
+                column: "Studio");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Movies_Title",
+                table: "Movies",
+                column: "Title");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OrderBluRays_BluRayId",
                 table: "OrderBluRays",
                 column: "BluRayId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_OrderBluRays_OrderId",
-                table: "OrderBluRays",
-                column: "OrderId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_OrderStatusId",
@@ -564,24 +684,44 @@ namespace AniRay.Model.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_RequestUsers_RequestId",
-                table: "RequestUsers",
-                column: "RequestId");
+                name: "IX_Requests_DateTime",
+                table: "Requests",
+                column: "DateTime");
 
             migrationBuilder.CreateIndex(
-                name: "IX_RequestUsers_UserId",
-                table: "RequestUsers",
+                name: "IX_Requests_Title",
+                table: "Requests",
+                column: "Title");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Requests_UserId",
+                table: "Requests",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_twoWayAuths_UserId",
+                table: "twoWayAuths",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserBluRayNotifications_BluRayId",
+                table: "UserBluRayNotifications",
+                column: "BluRayId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserBluRayNotifications_UserId_BluRayId",
+                table: "UserBluRayNotifications",
+                columns: new[] { "UserId", "BluRayId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserCarts_UserId",
+                table: "UserCarts",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserFavorites_MovieId",
                 table: "UserFavorites",
                 column: "MovieId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserFavorites_UserId",
-                table: "UserFavorites",
-                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_GenderId",
@@ -606,6 +746,9 @@ namespace AniRay.Model.Migrations
                 name: "BluRayCarts");
 
             migrationBuilder.DropTable(
+                name: "BluRayNotificationTriggers");
+
+            migrationBuilder.DropTable(
                 name: "MovieGenres");
 
             migrationBuilder.DropTable(
@@ -615,22 +758,34 @@ namespace AniRay.Model.Migrations
                 name: "RefreshTokens");
 
             migrationBuilder.DropTable(
-                name: "RequestUsers");
+                name: "Requests");
+
+            migrationBuilder.DropTable(
+                name: "twoWayAuths");
+
+            migrationBuilder.DropTable(
+                name: "UserBluRayNotifications");
 
             migrationBuilder.DropTable(
                 name: "UserFavorites");
 
             migrationBuilder.DropTable(
-                name: "Genres");
+                name: "UserCarts");
 
             migrationBuilder.DropTable(
-                name: "BluRays");
+                name: "Genres");
 
             migrationBuilder.DropTable(
                 name: "Orders");
 
             migrationBuilder.DropTable(
-                name: "Requests");
+                name: "BluRays");
+
+            migrationBuilder.DropTable(
+                name: "OrderStatuses");
+
+            migrationBuilder.DropTable(
+                name: "Users");
 
             migrationBuilder.DropTable(
                 name: "AudioFormat");
@@ -640,12 +795,6 @@ namespace AniRay.Model.Migrations
 
             migrationBuilder.DropTable(
                 name: "VideoFormat");
-
-            migrationBuilder.DropTable(
-                name: "OrderStatuses");
-
-            migrationBuilder.DropTable(
-                name: "Users");
 
             migrationBuilder.DropTable(
                 name: "Genders");

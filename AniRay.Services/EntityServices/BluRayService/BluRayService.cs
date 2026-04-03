@@ -217,18 +217,42 @@ namespace AniRay.Services.EntityServices.BluRayService
             result = UpsertHelper.ValidateDate(request.ReleaseDate, entity.ReleaseDate, sixMonthsFromNow, "BluRay Release Date", true);
             if (!result.Success) return result;
 
-            //if (inStock == 0 && request.InStock > 0)
-            if (request.InStock != null)
+            if (request!.InStock != null && inStock == 0 && request.InStock > 0)
             {
-                _ = Task.Run(async () => { await _service.RunNotificationJob(bluRayId); });
+                await TriggerCheck(Context, entity.Id);
+                _ = _service.RunNotificationJob(entity.Id, "bluray_notifications_email_queue");
             }
 
             return ServiceResult<bool>.Ok(true);
         }
+
         public override async Task FinalUpdateEmployeeIncludes(BluRay entity, BluRayURE? request)
         {
             await Context.Entry(entity).Reference(e => e.AudioFormat).LoadAsync();
             await Context.Entry(entity).Reference(e => e.VideoFormat).LoadAsync();
+        }
+        private async Task TriggerCheck(AniRayDbContext context, int bluRayId)
+        {
+            var entity = await context.Set<BluRayNotificationTrigger>()
+                .FirstOrDefaultAsync(t => t.BluRayId == bluRayId);
+
+            if (entity == null)
+            {
+                entity = new BluRayNotificationTrigger
+                {
+                    BluRayId = bluRayId,
+                    Trigger = true
+                };
+
+                await context.AddAsync(entity);
+            }
+            else
+            {
+                entity.Trigger = true;
+                context.Update(entity);
+            }
+
+            await context.SaveChangesAsync();
         }
         #endregion
 
