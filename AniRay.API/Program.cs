@@ -54,10 +54,13 @@ builder.Services.AddScoped<IUserFavoritesService, UserFavoritesService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 
 builder.Services.AddSingleton<BluRayNotificationService>();
+builder.Services.AddSingleton<BluRayNotificationFailedService>();
+builder.Services.AddSingleton<BluRayNotificationDLService>();
 builder.Services.AddHostedService<BluRayNotificationScheduler>();
 
 builder.Services.AddSingleton<IMessageProducer, MessageProducer>();
 builder.Services.AddHostedService<EmailConsumerService>();
+builder.Services.AddHostedService<FailedEmailRetryService>();
 
 builder.Services.Configure<RabbitMqDetails>(
     builder.Configuration.GetSection("RabbitMQ"));
