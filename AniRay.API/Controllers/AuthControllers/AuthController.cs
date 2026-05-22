@@ -22,10 +22,16 @@ namespace AniRay.API.Controllers.EntityControllers
             return await _authService.Register(request, ct);
         }
 
-        [HttpPost("Login")]
-        public async Task<ActionResult<AuthResult>> Login(LoginDto dto, CancellationToken ct)
+        [HttpPost("Login/ForUsers")]
+        public async Task<ActionResult<AuthResult>> LoginForUsers(LoginDto dto, CancellationToken ct)
         {
-            return await _authService.Login(dto, ct);
+            return await _authService.LoginForUsers(dto, ct);
+        }
+
+        [HttpPost("Login/ForStaff")]
+        public async Task<ActionResult<AuthResult>> LoginForStaff(LoginDto dto, CancellationToken ct)
+        {
+            return await _authService.LoginForStaff(dto, ct);
         }
 
         [HttpPost("Verify-2FA")]

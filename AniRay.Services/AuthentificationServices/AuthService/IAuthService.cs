@@ -12,7 +12,8 @@ namespace AniRay.Services.AuthentificationServices.AuthService
     public interface IAuthService
     {
         Task<ActionResult<object>> Register(UserIRU request, CancellationToken cancellationToken);
-        Task<ActionResult<AuthResult>> Login(LoginDto dto, CancellationToken cancellationToken);
+        Task<ActionResult<AuthResult>> LoginForUsers(LoginDto dto, CancellationToken cancellationToken);
+        Task<ActionResult<AuthResult>> LoginForStaff(LoginDto dto, CancellationToken cancellationToken);
         Task<ActionResult<AuthResult>> Verify2FA(Verify2FADto dto, CancellationToken cancellationToken);
         Task<ActionResult<AuthResult>> Refresh(RefreshRequestDto dto, CancellationToken cancellationToken);
         Task<ActionResult> Logout(LogoutDto dto, CancellationToken cancellationToken);

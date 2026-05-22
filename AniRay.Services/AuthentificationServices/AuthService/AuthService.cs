@@ -74,15 +74,40 @@ namespace AniRay.Services.AuthentificationServices.AuthService
                 Email = createdUser.Email
             });
         }
-        public async Task<ActionResult<AuthResult>> Login(LoginDto dto, CancellationToken cancellationToken)
+        public async Task<ActionResult<AuthResult>> LoginForUsers(LoginDto dto, CancellationToken cancellationToken)
         {
             var user = await _context.Users.AsNoTracking().Include(u => u.UserRole)
                 .SingleOrDefaultAsync(u => u.Email == dto.Email, cancellationToken);
             if (user == null)
                 throw new AuthException("Email or password is incorrect");
 
-            if(user.UserStatusId != (int)CoreData.CoreUserStatus.Active)
+            if (user.UserStatusId != (int)CoreData.CoreUserStatus.Active)
                 throw new AuthException("User is no longer Active");
+
+            if (user.UserRoleId != (int)CoreData.CoreUserRole.User)
+                throw new AuthException("User does not have permission to log in via this platform");
+
+            var isPasswordValid = PasswordHelper.VerifyPassword(dto.Password, user.PasswordHash, user.PasswordSalt);
+            if (!isPasswordValid)
+                throw new AuthException("Email or password is incorrect");
+
+            if (user.TwoFA)
+                return await HandleTwoFactor(user, cancellationToken);
+
+            return await GenerateAuthTokens(user, cancellationToken);
+        }
+        public async Task<ActionResult<AuthResult>> LoginForStaff(LoginDto dto, CancellationToken cancellationToken)
+        {
+            var user = await _context.Users.AsNoTracking().Include(u => u.UserRole)
+                .SingleOrDefaultAsync(u => u.Email == dto.Email, cancellationToken);
+            if (user == null)
+                throw new AuthException("Email or password is incorrect");
+
+            if (user.UserStatusId != (int)CoreData.CoreUserStatus.Active)
+                throw new AuthException("User is no longer Active");
+
+            if (user.UserRoleId == (int)CoreData.CoreUserRole.User)
+                throw new AuthException("User does not have permission to log in via this platform");
 
             var isPasswordValid = PasswordHelper.VerifyPassword(dto.Password, user.PasswordHash, user.PasswordSalt);
             if (!isPasswordValid)
