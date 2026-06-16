@@ -15,6 +15,7 @@ namespace AniRay.Services.AuthentificationServices.AuthService
         Task<ActionResult<AuthResult>> LoginForUsers(LoginDto dto, CancellationToken cancellationToken);
         Task<ActionResult<AuthResult>> LoginForStaff(LoginDto dto, CancellationToken cancellationToken);
         Task<ActionResult<AuthResult>> Verify2FA(Verify2FADto dto, CancellationToken cancellationToken);
+        Task<ActionResult<AuthResult>> Resend2FACode(int userId, CancellationToken cancellationToken);
         Task<ActionResult<AuthResult>> Refresh(RefreshRequestDto dto, CancellationToken cancellationToken);
         Task<ActionResult> Logout(LogoutDto dto, CancellationToken cancellationToken);
     }

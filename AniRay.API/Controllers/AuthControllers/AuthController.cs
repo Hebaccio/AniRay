@@ -40,6 +40,12 @@ namespace AniRay.API.Controllers.EntityControllers
             return await _authService.Verify2FA(dto, ct);
         }
 
+        [HttpPost("Resend-2FA")]
+        public async Task<ActionResult<AuthResult>> Resend2FACode(int userId, CancellationToken ct)
+        {
+            return await _authService.Resend2FACode(userId, ct);
+        }
+
         [HttpPost("Refresh")]
         public async Task<ActionResult<AuthResult>> Refresh(RefreshRequestDto dto, CancellationToken ct)
         {

@@ -9,6 +9,7 @@ using AniRay.Services.EntityServices.UserCartService;
 using AniRay.Services.EntityServices.UserService;
 using AniRay.Services.HelperServices.MailService;
 using AniRay.Services.HelperServices.OtherHelpers;
+using Azure.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -155,6 +156,17 @@ namespace AniRay.Services.AuthentificationServices.AuthService
 
             return await GenerateAuthTokens(user, cancellationToken);
         }
+        public async Task<ActionResult<AuthResult>> Resend2FACode(int userId, CancellationToken cancellationToken)
+        {
+            var user = await _context.Users.Where(u => u.Id == userId).FirstOrDefaultAsync();
+            if (user == null)
+                throw new AuthException("User doesn't exist");
+
+            if (user.UserStatusId != (int)CoreData.CoreUserStatus.Active)
+                throw new AuthException("User is no longer Active");
+
+            return await HandleTwoFactor(user, cancellationToken);
+        }
         public async Task<ActionResult<AuthResult>> Refresh(RefreshRequestDto dto, CancellationToken cancellationToken)
         {
             if (dto == null || string.IsNullOrWhiteSpace(dto.RefreshToken) || string.IsNullOrWhiteSpace(dto.AccessToken))
@@ -190,11 +202,12 @@ namespace AniRay.Services.AuthentificationServices.AuthService
             var identity = new ClaimsIdentity(principal.Claims);
 
             var newAccessExpiry = DateTime.UtcNow.AddMinutes(_accessTokenMinutes);
-
+            
             var newAccessToken = _tokenService.CreateAccessToken(identity, newAccessExpiry);
+            bool TwoFactorRequired = false;
 
             return new OkObjectResult(
-                new AuthResult(newAccessToken, newRefreshToken, newAccessExpiry)
+                new AuthResult(TwoFactorRequired, null, newAccessToken, newRefreshToken, newAccessExpiry)
             );
         }
         public async Task<ActionResult> Logout(LogoutDto dto, CancellationToken cancellationToken)
@@ -232,12 +245,9 @@ namespace AniRay.Services.AuthentificationServices.AuthService
 
             _context.twoWayAuths.Add(new2FA);
             await _context.SaveChangesAsync(cancellationToken);
+            bool TwoFactorRequired = true;
 
-            return new OkObjectResult(new
-            {
-                TwoFactorRequired = true,
-                UserId = user.Id
-            });
+            return new OkObjectResult(new AuthResult(TwoFactorRequired, user.Id, null, null, null));
         }
         private async Task RevokeExistingRefreshTokens(int userId, CancellationToken cancellationToken)
         {
@@ -273,8 +283,9 @@ namespace AniRay.Services.AuthentificationServices.AuthService
             var rt = CreateRefreshToken(user.Id, refreshToken);
             _context.RefreshTokens.Add(rt);
             await _context.SaveChangesAsync(cancellationToken);
+            bool TwoFactorRequired = false;
 
-            return new OkObjectResult(new AuthResult(accessToken, refreshToken, accessExpiry));
+            return new OkObjectResult(new AuthResult(TwoFactorRequired, user.Id, accessToken, refreshToken, accessExpiry));
         }
         private RefreshToken CreateRefreshToken(int userId, string token)
         {

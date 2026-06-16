@@ -15,13 +15,19 @@ namespace AniRay.Services.EntityServices.BluRayService
 {
     public class BluRayService : BaseCRUDService<BluRayMU, BluRayME, BluRaySOU, BluRaySOE, BluRay, BluRayIRU, BluRayIRE, BluRayURU, BluRayURE>, IBluRayService
     {
-        private readonly ICurrentUserService _currentUser;
-        private readonly BluRayNotificationService _service;
+        //private readonly ICurrentUserService _currentUser;
+        //private readonly BluRayNotificationService _service;
 
-        public BluRayService(AniRayDbContext context, IMapper mapper, ICurrentUserService currentUser, BluRayNotificationService service) : base(context, mapper, currentUser)
+        //public BluRayService(AniRayDbContext context, IMapper mapper, ICurrentUserService currentUser, BluRayNotificationService service) : base(context, mapper, currentUser)
+        //{
+        //    _currentUser = currentUser;
+        //    _service = service;
+        //}
+
+        private readonly ICurrentUserService _currentUser;
+        public BluRayService(AniRayDbContext context, IMapper mapper, ICurrentUserService currentUser) : base(context, mapper, currentUser)
         {
             _currentUser = currentUser;
-            _service = service;
         }
 
         #region Get By Id - For Users
@@ -217,11 +223,11 @@ namespace AniRay.Services.EntityServices.BluRayService
             result = UpsertHelper.ValidateDate(request.ReleaseDate, entity.ReleaseDate, sixMonthsFromNow, "BluRay Release Date", true);
             if (!result.Success) return result;
 
-            if (request!.InStock != null && inStock == 0 && request.InStock > 0)
-            {
-                await TriggerCheck(Context, entity.Id);
-                _ = _service.RunNotificationJob(entity.Id, "bluray_notifications_email_queue");
-            }
+            //if (request!.InStock != null && inStock == 0 && request.InStock > 0)
+            //{
+            //    await TriggerCheck(Context, entity.Id);
+            //    _ = _service.RunNotificationJob(entity.Id, "bluray_notifications_email_queue");
+            //}
 
             return ServiceResult<bool>.Ok(true);
         }

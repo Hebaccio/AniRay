@@ -4,7 +4,14 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
-public record AuthResult(string AccessToken, string RefreshToken, DateTime ExpiresAt);
+public record AuthResult
+( 
+    bool? TwoFactorRequired, 
+    int? UserId, 
+    string? AccessToken, 
+    string? RefreshToken, 
+    DateTime? ExpiresAt
+);
 
 namespace AniRay.Model.Entities
 {
