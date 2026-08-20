@@ -23,7 +23,7 @@ namespace AniRay.API.Filters
             }
             else
             {
-                context.ModelState.AddModelError("ERROR", "Server side error, please check log");
+                context.ModelState.AddModelError("message", "Server side error, please check logs");
                 context.HttpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
             }
 

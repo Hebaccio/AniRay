@@ -25,7 +25,8 @@ namespace AniRay.Services.AuthentificationServices.AuthService
         private readonly IMailService _mailService;
         private readonly IUserService _userService;
         private readonly IUserCartService _userCartService;
-        private readonly int _accessTokenMinutes;
+        //private readonly int _accessTokenMinutes;
+        private readonly int _accessTokenDays;
         private readonly int _refreshTokenDays;
 
         public AuthService(
@@ -42,7 +43,8 @@ namespace AniRay.Services.AuthentificationServices.AuthService
             _mailService = mailService;
             _userService = userService;
             _userCartService = userCartService;
-            _accessTokenMinutes = int.Parse(_config["Jwt:AccessTokenExpirationMinutes"]!);
+            //_accessTokenMinutes = int.Parse(_config["Jwt:AccessTokenExpirationMinutes"]!);
+            _accessTokenDays = int.Parse(_config["Jwt:AccessTokenExpirationDays"]!);
             _refreshTokenDays = int.Parse(_config["Jwt:RefreshTokenExpirationDays"]!);
         }
 
@@ -201,8 +203,9 @@ namespace AniRay.Services.AuthentificationServices.AuthService
 
             var identity = new ClaimsIdentity(principal.Claims);
 
-            var newAccessExpiry = DateTime.UtcNow.AddMinutes(_accessTokenMinutes);
-            
+            //var newAccessExpiry = DateTime.UtcNow.AddMinutes(_accessTokenMinutes);
+            var newAccessExpiry = DateTime.UtcNow.AddDays(_accessTokenDays);
+
             var newAccessToken = _tokenService.CreateAccessToken(identity, newAccessExpiry);
             bool TwoFactorRequired = false;
 
@@ -274,7 +277,8 @@ namespace AniRay.Services.AuthentificationServices.AuthService
 
             var identity = new ClaimsIdentity(claims);
 
-            var accessExpiry = DateTime.UtcNow.AddMinutes(_accessTokenMinutes);
+            //var accessExpiry = DateTime.UtcNow.AddMinutes(_accessTokenMinutes);
+            var accessExpiry = DateTime.UtcNow.AddDays(_accessTokenDays);
             var accessToken = _tokenService.CreateAccessToken(identity, accessExpiry);
             var refreshToken = _tokenService.CreateRefreshToken();
 

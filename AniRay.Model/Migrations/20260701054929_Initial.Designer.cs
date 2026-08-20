@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AniRay.Model.Migrations
 {
     [DbContext(typeof(AniRayDbContext))]
-    [Migration("20260403102830_Initial")]
+    [Migration("20260701054929_Initial")]
     partial class Initial
     {
         /// <inheritdoc />

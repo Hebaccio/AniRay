@@ -16,11 +16,11 @@ namespace AniRay.API.Controllers.BasicEntityControllers
         {
         }
 
-        [NonAction]
-        public override async Task<ActionResult<PagedResult<BaseClassME>>> GetPagedEntitiesForEmployees([FromQuery] BaseClassSOE searchObject, CancellationToken cancellationToken)
-        {
-            return await base.GetPagedEntitiesForEmployees(searchObject, cancellationToken);
-        }
+        //[NonAction]
+        //public override async Task<ActionResult<PagedResult<BaseClassME>>> GetPagedEntitiesForEmployees([FromQuery] BaseClassSOE searchObject, CancellationToken cancellationToken)
+        //{
+        //    return await base.GetPagedEntitiesForEmployees(searchObject, cancellationToken);
+        //}
 
         [NonAction]
         public override async Task<ActionResult<BaseClassME>> InsertEntityForEmployees(BaseClassIRE request, CancellationToken cancellationToken)
