@@ -7,12 +7,14 @@ using AniRay.Model.Requests.UserRequests;
 using AniRay.Services.AuthentificationServices.TokenService;
 using AniRay.Services.EntityServices.UserCartService;
 using AniRay.Services.EntityServices.UserService;
+using AniRay.Services.HelperServices.CurrentUserService;
 using AniRay.Services.HelperServices.MailService;
 using AniRay.Services.HelperServices.OtherHelpers;
 using Azure.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Org.BouncyCastle.Asn1.Ocsp;
 using System.Security.Claims;
 
 namespace AniRay.Services.AuthentificationServices.AuthService
@@ -25,9 +27,9 @@ namespace AniRay.Services.AuthentificationServices.AuthService
         private readonly IMailService _mailService;
         private readonly IUserService _userService;
         private readonly IUserCartService _userCartService;
-        //private readonly int _accessTokenMinutes;
-        private readonly int _accessTokenDays;
+        private readonly int _accessTokenMinutes;
         private readonly int _refreshTokenDays;
+        private readonly ICurrentUserService _currentUser;
 
         public AuthService(
             ITokenService tokenService,
@@ -35,7 +37,8 @@ namespace AniRay.Services.AuthentificationServices.AuthService
             IConfiguration config,
             IMailService mailService,
             IUserService userService,
-            IUserCartService userCartService)
+            IUserCartService userCartService,
+            ICurrentUserService currentUser)
         {
             _tokenService = tokenService;
             _context = context;
@@ -43,11 +46,12 @@ namespace AniRay.Services.AuthentificationServices.AuthService
             _mailService = mailService;
             _userService = userService;
             _userCartService = userCartService;
-            //_accessTokenMinutes = int.Parse(_config["Jwt:AccessTokenExpirationMinutes"]!);
-            _accessTokenDays = int.Parse(_config["Jwt:AccessTokenExpirationDays"]!);
+            _accessTokenMinutes = int.Parse(_config["Jwt:AccessTokenExpirationMinutes"]!);
             _refreshTokenDays = int.Parse(_config["Jwt:RefreshTokenExpirationDays"]!);
+            _currentUser = currentUser;
         }
 
+        #region Basic Auth Methods
         public async Task<ActionResult<object>> Register(UserIRU request, CancellationToken cancellationToken)
         {
             var resultUserInsert = await _userService.InsertEntityForUsers(request, cancellationToken);
@@ -203,8 +207,7 @@ namespace AniRay.Services.AuthentificationServices.AuthService
 
             var identity = new ClaimsIdentity(principal.Claims);
 
-            //var newAccessExpiry = DateTime.UtcNow.AddMinutes(_accessTokenMinutes);
-            var newAccessExpiry = DateTime.UtcNow.AddDays(_accessTokenDays);
+            var newAccessExpiry = DateTime.UtcNow.AddMinutes(_accessTokenMinutes);
 
             var newAccessToken = _tokenService.CreateAccessToken(identity, newAccessExpiry);
             bool TwoFactorRequired = false;
@@ -226,6 +229,7 @@ namespace AniRay.Services.AuthentificationServices.AuthService
 
             return new OkResult();
         }
+        #endregion
 
         #region Helpers
         private async Task<ActionResult<AuthResult>> HandleTwoFactor(User user, CancellationToken cancellationToken)
@@ -277,8 +281,7 @@ namespace AniRay.Services.AuthentificationServices.AuthService
 
             var identity = new ClaimsIdentity(claims);
 
-            //var accessExpiry = DateTime.UtcNow.AddMinutes(_accessTokenMinutes);
-            var accessExpiry = DateTime.UtcNow.AddDays(_accessTokenDays);
+            var accessExpiry = DateTime.UtcNow.AddMinutes(_accessTokenMinutes);
             var accessToken = _tokenService.CreateAccessToken(identity, accessExpiry);
             var refreshToken = _tokenService.CreateRefreshToken();
 
@@ -303,5 +306,70 @@ namespace AniRay.Services.AuthentificationServices.AuthService
         }
         #endregion
 
+
+        #region Password Change
+        public async Task<ActionResult<AuthResult>> Send2FAForPasswordReset(string email, CancellationToken cancellationToken)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+            if (user == null)
+                throw new AuthException("Email is incorrect");
+
+            if (user.UserStatusId != (int)CoreData.CoreUserStatus.Active)
+                throw new AuthException("User is no longer Active");
+
+            return await HandleTwoFactor(user, cancellationToken);
+        }
+        public async Task<ActionResult<AuthResult>> Verify2FAForPasswordReset(PasswordChange dto, CancellationToken cancellationToken)
+        {
+            var userCode = await _context.twoWayAuths.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.UserId == dto.UserId, cancellationToken);
+
+            if (userCode == null)
+                throw new AuthException("No code sent to the user!");
+
+            var sentCode = TwoFactorAuthHelper.Hash2FA(dto.Code, userCode.CreatedAt);
+
+            if (sentCode != userCode.Code)
+            {
+                userCode.Attempt++;
+
+                if (userCode.Attempt >= 3)
+                {
+                    _context.twoWayAuths.Remove(userCode);
+                    await _context.SaveChangesAsync(cancellationToken);
+                    throw new AuthException("Failed 3rd attempt, you have to do the process again!");
+                }
+
+                _context.twoWayAuths.Update(userCode);
+                await _context.SaveChangesAsync(cancellationToken);
+                throw new AuthException($"Codes do not match, try again! Attempt {userCode.Attempt}/3");
+            }
+
+            _context.twoWayAuths.Remove(userCode);
+
+            var user = await _context.Users
+                .Include(u => u.UserRole)
+                .FirstOrDefaultAsync(u => u.Id == dto.UserId, cancellationToken);
+
+            if (user == null)
+                throw new AuthException("User doesn't exist!");
+
+            ServiceResult<bool> result;
+            result = UpsertHelper.ValidatePasswordRegexForInsert(dto.NewPassword, dto.NewRepeatPassword, 8, 20, "New Password", false);
+            if (!result.Success) throw new AuthException(result.Message);
+
+            PasswordHelper.CreatePasswordHash(
+                dto.NewPassword,
+                out byte[] newPasswordHash,
+                out byte[] newPasswordSalt);
+
+            user.PasswordHash = newPasswordHash;
+            user.PasswordSalt = newPasswordSalt;
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return await GenerateAuthTokens(user, cancellationToken);
+        }
+        #endregion
     }
 }

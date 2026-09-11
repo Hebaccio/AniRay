@@ -57,5 +57,18 @@ namespace AniRay.API.Controllers.EntityControllers
         {
             return await _authService.Logout(dto, ct);
         }
+
+        [HttpPost("Send2FAForPasswordReset")]
+        public async Task<ActionResult<AuthResult>> Send2FAForPasswordReset(string email, CancellationToken cancellationToken)
+        {
+            return await _authService.Send2FAForPasswordReset(email, cancellationToken);
+        }
+
+        [HttpPost("Verify2FAForPasswordReset")]
+        public async Task<ActionResult<AuthResult>> Verify2FAForPasswordReset(PasswordChange dto, CancellationToken cancellationToken)
+        {
+            return await _authService.Verify2FAForPasswordReset(dto, cancellationToken);
+        }
+
     }
 }

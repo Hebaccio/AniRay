@@ -161,7 +161,7 @@ namespace AniRay.Services.EntityServices.UserService
             if (!result.Success) return result;
 
             //Password
-            result = UpsertHelper.ValidatePasswordRegex(request.Password, request.Password2, 6, 20, nameof(request.Password), false);
+            result = UpsertHelper.ValidatePasswordRegexForInsert(request.Password, request.Password2, 6, 20, nameof(request.Password), false);
             if (!result.Success) return result;
 
             //Birthday
@@ -232,7 +232,7 @@ namespace AniRay.Services.EntityServices.UserService
             if (!result.Success) return result;
 
             //Password
-            result = UpsertHelper.ValidatePasswordRegex(request.Password, request.Password2, 6, 20, nameof(request.Password), false);
+            result = UpsertHelper.ValidatePasswordRegexForInsert(request.Password, request.Password2, 6, 20, nameof(request.Password), false);
             if (!result.Success) return result;
 
             //Birthday
@@ -280,6 +280,17 @@ namespace AniRay.Services.EntityServices.UserService
             if (!nullCheck.Success)
                 return nullCheck;
 
+            if (request.Password != null && request.NewPassword != null && request.NewRepeatPassword != null)
+            {
+                PasswordHelper.CreatePasswordHash(
+                    request.NewPassword,
+                    out byte[] newPasswordHash,
+                    out byte[] newPasswordSalt);
+
+                entity.PasswordHash = newPasswordHash;
+                entity.PasswordSalt = newPasswordSalt;
+            }
+
             return ServiceResult<bool>.Ok(true);
         }
         private async Task<ServiceResult<bool>> BeforeUpdateForUsersChecks(UserURU request, User entity, CancellationToken cancellationToken)
@@ -307,7 +318,7 @@ namespace AniRay.Services.EntityServices.UserService
             if (!result.Success) return result;
 
             //Password
-            result = UpsertHelper.ValidatePasswordRegex(request.Password, request.Password2, 6, 20, nameof(request.Password), true);
+            result = UpsertHelper.ValidatePasswordRegexForUpdate(request.Password, request.NewPassword, request.NewRepeatPassword, entity.PasswordHash, entity.PasswordSalt, 6, 20, nameof(request.NewPassword), true);
             if (!result.Success) return result;
 
             //Birthday
@@ -372,7 +383,7 @@ namespace AniRay.Services.EntityServices.UserService
             if (!result.Success) return result;
 
             //Username
-            result = await UpsertHelper.ValidateUsernameAsync<User>(Context, request.Username, 6, 50, nameof(request.Username), _currentUser.UserId, cancellationToken, true);
+            result = await UpsertHelper.ValidateUsernameAsync<User>(Context, request.Username, 6, 50, nameof(request.Username), entity.Id, cancellationToken, true);
             if (!result.Success) return result;
 
             //Name
@@ -384,7 +395,7 @@ namespace AniRay.Services.EntityServices.UserService
             if (!result.Success) return result;
 
             //Email
-            result = await UpsertHelper.ValidateEmailAsync<User>(Context, request.Email, 6, 50, nameof(request.Email), _currentUser.UserId, cancellationToken, true);
+            result = await UpsertHelper.ValidateEmailAsync<User>(Context, request.Email, 6, 50, nameof(request.Email), entity.Id, cancellationToken, true);
             if (!result.Success) return result;
 
             //Birthday

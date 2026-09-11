@@ -74,6 +74,9 @@ namespace AniRay.Services.EntityServices.RequestService
                 var orderBy = search.OrderBy?.ToString() ?? "DateTime";
                 var finalOrderBy = $"{orderBy} {sort}";
                 query = query.OrderBy(finalOrderBy);
+            } else
+            {
+                query = query.OrderByDescending(r => r.DateTime);
             }
 
             query = query.Include(r => r.User);

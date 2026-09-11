@@ -13,6 +13,7 @@ namespace AniRay.Services.EntityServices.UserFavoritesService
     public interface IUserFavoritesService : 
         ICRUDService<UserFavoritesMU, UserFavoritesME, UserFavoritesSOU, UserFavoritesSOE, UserFavoritesIRU, UserFavoritesIRE, UserFavoritesURU, UserFavoritesURE>
     {
-        public Task<ActionResult<UserFavoritesMU>> RemoveMovieFromFavorites(int? id, CancellationToken cancellationToken);
+        public Task<ActionResult<bool>> RemoveMovieFromFavorites(int id, CancellationToken cancellationToken);
+        public Task<ActionResult<bool>> IsMovieInFavorites(int id, CancellationToken cancellationToken);
     }
 }

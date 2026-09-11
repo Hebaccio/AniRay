@@ -44,7 +44,7 @@ namespace AniRay.API.Controllers.EntityControllers
 
         [HttpGet("IsBluRayInCart/ForUsers/{id}")]
         [Authorize(Roles = "User")]
-        public async Task<ActionResult<bool>> IsBluRayInCart(int id, CancellationToken cancellationToken)
+        public async Task<ActionResult<BluRayCart>> IsBluRayInCart(int id, CancellationToken cancellationToken)
         {
             return await _service.IsBluRayInCart(id, cancellationToken);
         }

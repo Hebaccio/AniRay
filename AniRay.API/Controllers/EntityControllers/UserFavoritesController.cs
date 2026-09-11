@@ -19,6 +19,13 @@ namespace AniRay.API.Controllers.EntityControllers
             _userFavoritesService = Service;
         }
 
+        [HttpGet("IsMovieInFavorites/ForUsers")]
+        [Authorize(Roles = "User")]
+        public async Task<ActionResult<bool>> IsMovieInFavorites(int id, CancellationToken cancellationToken)
+        {
+            return await _userFavoritesService.IsMovieInFavorites(id, cancellationToken);
+        }
+
         [Authorize(Roles = "User")]
         public override async Task<ActionResult<UserFavoritesMU>> InsertEntityForUsers(UserFavoritesIRU request, CancellationToken cancellationToken)
         {
@@ -27,7 +34,7 @@ namespace AniRay.API.Controllers.EntityControllers
 
         [HttpDelete("RemoveFromFavorites/ForUsers")]
         [Authorize(Roles = "User")]
-        public async Task<ActionResult<UserFavoritesMU>> RemoveMovieFromFavoritesForUsers(int id, CancellationToken cancellationToken)
+        public async Task<ActionResult<bool>> RemoveMovieFromFavoritesForUsers(int id, CancellationToken cancellationToken)
         {
             return await _userFavoritesService.RemoveMovieFromFavorites(id, cancellationToken);
         }

@@ -58,7 +58,7 @@ namespace AniRay.Services.EntityServices.UserFavoritesService
         #endregion
 
         #region Insert - For Users
-        public override bool IsDeleteForUsersAuthorized()
+        public bool IsInsertForUsersAuthorized()
         {
             return _currentUser.IsAuthenticated && _currentUser.IsUser();
         }
@@ -93,9 +93,6 @@ namespace AniRay.Services.EntityServices.UserFavoritesService
             var allEntities = await Context.Set<UserFavorites>()
                 .Where(uf => uf.UserId == _currentUser.UserId)
                 .ToListAsync(cancellationToken);
-
-            if (allEntities.Count >= 10)
-                return ServiceResult<Movie>.Fail("User can only have 10 favorite movies");
 
             bool alreadyExists = allEntities.Any(uf => uf.MovieId == request.MovieId);
             if (alreadyExists)
@@ -207,7 +204,7 @@ namespace AniRay.Services.EntityServices.UserFavoritesService
         #endregion
 
         #region SoftDelete (Actually Removing Individual User Favorites)
-        public async Task<ActionResult<UserFavoritesMU>> RemoveMovieFromFavorites(int? id, CancellationToken cancellationToken)
+        public async Task<ActionResult<bool>> RemoveMovieFromFavorites(int id, CancellationToken cancellationToken)
         {
             if (!IsDeleteForUsersAuthorized())
                 return new UnauthorizedResult();
@@ -223,12 +220,25 @@ namespace AniRay.Services.EntityServices.UserFavoritesService
             Context.Remove(entity);
             await Context.SaveChangesAsync(cancellationToken);
 
-            var mapped = Mapper.Map<UserFavoritesMU>(entity);
-            return new OkObjectResult(mapped);
+            return true;
         }
-        public bool IsInsertForUsersAuthorized()
+        public override bool IsDeleteForUsersAuthorized()
         {
             return _currentUser.IsAuthenticated && _currentUser.IsUser();
+        }
+        #endregion
+
+        #region IsMovieInFavorites
+
+        public async Task<ActionResult<bool>> IsMovieInFavorites(int id, CancellationToken cancellationToken)
+        {
+            if (!IsUpdateForUsersAuthorized())
+                return new UnauthorizedResult();
+
+            var entity = await Context.UserFavorites.Where(uf => uf.UserId == (int)_currentUser.UserId && uf.MovieId == id).FirstOrDefaultAsync();
+            if (entity == null)
+                return false;
+            return true;
         }
         #endregion
 

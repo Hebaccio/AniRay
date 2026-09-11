@@ -236,7 +236,7 @@ namespace AniRay.Services.EntityServices.UserCartService
         #region Other Methods
 
         #region Is BluRay In Cart
-        public async Task<ActionResult<bool>> IsBluRayInCart(int id, CancellationToken cancellationToken)
+        public async Task<ActionResult<BluRayCart>> IsBluRayInCart(int id, CancellationToken cancellationToken)
         {
             if (!IsGetByIdForUsersAuthorized())
                 return new UnauthorizedResult();
@@ -246,7 +246,7 @@ namespace AniRay.Services.EntityServices.UserCartService
             if (entity == null)
                 return new NotFoundObjectResult(false);
 
-            return new OkObjectResult(true);
+            return new OkObjectResult(entity);
         }
         public virtual async Task<BluRayCart?> EntityGetTriggerForBluRayInCart(int id, IQueryable<BluRayCart> query, CancellationToken cancellationToken)
         {
@@ -429,6 +429,20 @@ namespace AniRay.Services.EntityServices.UserCartService
         #endregion
 
         #endregion
+
+        /*
+        Places -> Outings
+        ++++++++++++++++++++++++++++
+        Current Table? FINE
+        Any Improvements? Down Below
+        ----------------------------
+        What to take care of in Outing Side:
+        1 - Order of Outing Names (Alphabet + Date)
+        2 - Place Priority, Visit Date & Visited with Who?
+
+        ----------------------------
+         */
+
 
     }
 }

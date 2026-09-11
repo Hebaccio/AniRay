@@ -82,7 +82,7 @@ namespace AniRay.Services.HelperServices.OtherHelpers
 
             return ServiceResult<bool>.Ok(true);
         }
-        public static ServiceResult<bool> ValidatePasswordRegex(string? value1, string? value2, int minLength, int maxLength, string attributeName, bool nullsAllowed)
+        public static ServiceResult<bool> ValidatePasswordRegexForInsert(string? value1, string? value2, int minLength, int maxLength, string attributeName, bool nullsAllowed)
         {
             ServiceResult<bool> result;
 
@@ -101,6 +101,36 @@ namespace AniRay.Services.HelperServices.OtherHelpers
             if (!passwordRegex.IsMatch(value1))
                 return ServiceResult<bool>.Fail($"{attributeName} must contain at least " +
                     $"8 characters, one uppercase letter, one lowercase letter, one number, and one special character!");
+
+            return ServiceResult<bool>.Ok(true);
+        }
+
+        public static ServiceResult<bool> ValidatePasswordRegexForUpdate(string? currentPassword, string? newPassword, string? newRepeatPassword,
+                    byte[] storedPasswordHash, byte[] storedPasswordSalt, int minLength, int maxLength, string attributeName, bool nullsAllowed)
+        {
+            ServiceResult<bool> result;
+
+            if (nullsAllowed && (currentPassword == null || newPassword == null || newRepeatPassword == null))
+                return ServiceResult<bool>.Fail("When changing the Password, all 3 values must be typed in");
+
+            if (!PasswordHelper.VerifyPassword(currentPassword!,storedPasswordHash,storedPasswordSalt))
+                return ServiceResult<bool>.Fail("Current Password is incorrect.");
+
+            result = ValidateStringLength(newPassword, minLength, maxLength, attributeName, false);
+            if (!result.Success)
+                return result;
+
+            if (newPassword != newRepeatPassword)
+                return ServiceResult<bool>.Fail("Passwords do not match");
+
+            var passwordRegex = new System.Text.RegularExpressions.Regex(
+                @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$");
+
+            if (!passwordRegex.IsMatch(newPassword!))
+                return ServiceResult<bool>.Fail(
+                    "New Password must contain at least " +
+                    "8 characters, one uppercase letter, one lowercase letter, " +
+                    "one number, and one special character!");
 
             return ServiceResult<bool>.Ok(true);
         }
@@ -157,10 +187,13 @@ namespace AniRay.Services.HelperServices.OtherHelpers
             if(foreignKeyId != (int)CoreData.CoreUserStatus.Active)
             {
                 var token = await context.Set<RefreshToken>().FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
-                if (token == null)
-                    return ServiceResult<bool>.Fail("Token not found in database");
+                if (token != null)
+                    token.Revoked = true;
 
-                token.Revoked = true;
+                //if (token == null)
+                //    return ServiceResult<bool>.Fail("Token not found in database");
+
+                //token.Revoked = true;
             }
 
             return ServiceResult<bool>.Ok(true);

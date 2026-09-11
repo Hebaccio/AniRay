@@ -13,6 +13,7 @@ using System.Linq.Dynamic.Core;
 using System.Text;
 using System.Threading.Tasks;
 using static AniRay.Services.HelperServices.OtherHelpers.CoreData;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace AniRay.Services.EntityServices.OrderService
 {
@@ -35,6 +36,8 @@ namespace AniRay.Services.EntityServices.OrderService
         {
             query = query.Where(o => o.UserId == _currentUser.UserId).Include(o => o.BluRay).ThenInclude(o => o.BluRay);
             query = query.Include(o => o.OrderStatus);
+            query = query.Include(o => o.BluRay).ThenInclude(o => o.BluRay.VideoFormat);
+            query = query.Include(o => o.BluRay).ThenInclude(o => o.BluRay.AudioFormat);
             return query;
         }
         public override async Task<Order?> EntityGetTrigger(int? id, IQueryable<Order> query, CancellationToken cancellationToken)
@@ -46,8 +49,10 @@ namespace AniRay.Services.EntityServices.OrderService
         #region Get By Id - For Employees
         public override IQueryable<Order> AddGetByIdFiltersForEmployees(IQueryable<Order> query)
         {
-            query = query.Include(o => o.BluRay).ThenInclude(o => o.BluRay);
             query = query.Include(o => o.OrderStatus);
+            query = query.Include(o => o.BluRay).ThenInclude(o => o.BluRay);
+            query = query.Include(o => o.BluRay).ThenInclude(o => o.BluRay.VideoFormat);
+            query = query.Include(o => o.BluRay).ThenInclude(o => o.BluRay.AudioFormat);
             return query;
         }
         public override async Task<Order?> EntityGetTriggerForEmployee(int? id, IQueryable<Order> query, CancellationToken cancellationToken)
@@ -67,6 +72,13 @@ namespace AniRay.Services.EntityServices.OrderService
             query = query.Where(o => o.UserId == _currentUser.UserId).OrderByDescending(o => o.DateTime).Include(o => o.BluRay).ThenInclude(o => o.BluRay);
             query = query.Include(o => o.OrderStatus);
             query = query.Include(o => o.User);
+
+            query = query.Include(o => o.BluRay).ThenInclude(o => o.BluRay);
+            query = query.Include(o => o.OrderStatus);
+            query = query.Include(o => o.User);
+            query = query.Include(o => o.BluRay).ThenInclude(o => o.BluRay.VideoFormat);
+            query = query.Include(o => o.BluRay).ThenInclude(o => o.BluRay.AudioFormat);
+
             return query;
         }
         #endregion
@@ -105,10 +117,16 @@ namespace AniRay.Services.EntityServices.OrderService
                 var finalOrderBy = $"{orderBy} {sort}";
                 query = query.OrderBy(finalOrderBy);
             }
+            else
+            {
+                query = query.OrderByDescending(o => o.DateTime);
+            }
 
             query = query.Include(o => o.BluRay).ThenInclude(o => o.BluRay);
             query = query.Include(o => o.OrderStatus);
             query = query.Include(o => o.User);
+            query = query.Include(o => o.BluRay).ThenInclude(o => o.BluRay.VideoFormat);
+            query = query.Include(o => o.BluRay).ThenInclude(o => o.BluRay.AudioFormat);
 
             return query;
         }
@@ -293,8 +311,18 @@ namespace AniRay.Services.EntityServices.OrderService
             if (!exists)
                 return ServiceResult<bool>.Fail("Order Status Id is not valid");
 
+
             return ServiceResult<bool>.Ok(true);
         }
+
+        public override async Task FinalUpdateEmployeeIncludes(Order entity, OrderURE? request)
+        {
+            await Context.Entry(entity).Reference(e => e.OrderStatus).LoadAsync();
+            await Context.Entry(entity).Collection(e => e.BluRay).Query().Include(ob => ob.BluRay).LoadAsync();
+            await Context.Entry(entity).Collection(e => e.BluRay).Query().Include(ob => ob.BluRay.AudioFormat).LoadAsync();
+            await Context.Entry(entity).Collection(e => e.BluRay).Query().Include(ob => ob.BluRay.VideoFormat).LoadAsync();
+        }
+        
         #endregion
 
         #region SoftDelete
