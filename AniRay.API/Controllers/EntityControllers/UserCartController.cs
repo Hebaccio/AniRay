@@ -28,28 +28,28 @@ namespace AniRay.API.Controllers.EntityControllers
             return await _service.EntityGetByIdForUsers(null, cancellationToken);
         }
 
-        [HttpPost("AddIndividualBluRayToCart/ForUsers")]
+        [HttpPost("UpdateIndividualBluRayInCart/ForUsers")]
         [Authorize(Roles = "User")]
-        public async Task<ActionResult<bool>> AddIndividualBluRayToCart(UserCartIndividualURU request, CancellationToken cancellationToken)
+        public async Task<ActionResult<bool>> UpdateIndividualBluRayInCart(UserCartIndividualURU request, CancellationToken cancellationToken)
         {
-            return await _service.AddIndividualBluRayToCart(request, cancellationToken);
+            return await _service.UpdateIndividualBluRayInCart(request, cancellationToken);
         }
 
-        [HttpDelete("RemoveIndividualBluRayFromCart/ForUsers/{id}")]
-        [Authorize(Roles = "User")]
-        public async Task<ActionResult<bool>> RemoveIndividualBluRayFromCart(int id, CancellationToken cancellationToken)
-        {
-            return await _service.RemoveIndividualBluRayFromCart(id, cancellationToken);
-        }
+        //[HttpDelete("RemoveIndividualBluRayFromCart/ForUsers/{id}")]
+        //[Authorize(Roles = "User")]
+        //public async Task<ActionResult<bool>> RemoveIndividualBluRayFromCart(int id, CancellationToken cancellationToken)
+        //{
+        //    return await _service.RemoveIndividualBluRayFromCart(id, cancellationToken);
+        //}
 
         [HttpGet("IsBluRayInCart/ForUsers/{id}")]
         [Authorize(Roles = "User")]
-        public async Task<ActionResult<BluRayCart>> IsBluRayInCart(int id, CancellationToken cancellationToken)
+        public async Task<ActionResult<UserCartIsBluRayInCart>> IsBluRayInCart(int id, CancellationToken cancellationToken)
         {
             return await _service.IsBluRayInCart(id, cancellationToken);
         }
 
-        [HttpPut("UpdateEntity/ForUsers")]
+        [HttpPatch("UpdateEntity/ForUsers")]
         [Authorize(Roles = "User")]
         public new async Task<ActionResult<UserCartMU>> UpdateEntityForUsers(UserCartURU request, CancellationToken cancellationToken)
         {
