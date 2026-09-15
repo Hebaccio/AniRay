@@ -6,7 +6,8 @@ namespace AniRay.Model.Entities
 {
     public class OrderStatus : BaseClass
     {
-        
+        public bool ForUsers { get; set; }
+        public bool ForEmployees { get; set; }
     }
 
 }

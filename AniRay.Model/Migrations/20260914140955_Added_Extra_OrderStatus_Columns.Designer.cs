@@ -4,6 +4,7 @@ using AniRay.Model.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AniRay.Model.Migrations
 {
     [DbContext(typeof(AniRayDbContext))]
-    partial class AniRayDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260914140955_Added_Extra_OrderStatus_Columns")]
+    partial class Added_Extra_OrderStatus_Columns
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -520,10 +523,7 @@ namespace AniRay.Model.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<bool>("ForEmployees")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("ForUsers")
+                    b.Property<bool>("EmployeeOnly")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsDeleted")
@@ -533,6 +533,9 @@ namespace AniRay.Model.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("UserOnly")
+                        .HasColumnType("bit");
+
                     b.HasKey("Id");
 
                     b.ToTable("OrderStatuses");
@@ -541,34 +544,34 @@ namespace AniRay.Model.Migrations
                         new
                         {
                             Id = 1,
-                            ForEmployees = false,
-                            ForUsers = false,
+                            EmployeeOnly = false,
                             IsDeleted = false,
-                            Name = "In Progress"
+                            Name = "In Progress",
+                            UserOnly = false
                         },
                         new
                         {
                             Id = 2,
-                            ForEmployees = false,
-                            ForUsers = true,
+                            EmployeeOnly = false,
                             IsDeleted = false,
-                            Name = "Cancelled"
+                            Name = "Cancelled",
+                            UserOnly = true
                         },
                         new
                         {
                             Id = 3,
-                            ForEmployees = true,
-                            ForUsers = false,
+                            EmployeeOnly = true,
                             IsDeleted = false,
-                            Name = "Rejected"
+                            Name = "Rejected",
+                            UserOnly = false
                         },
                         new
                         {
                             Id = 4,
-                            ForEmployees = true,
-                            ForUsers = false,
+                            EmployeeOnly = true,
                             IsDeleted = false,
-                            Name = "Processed"
+                            Name = "Processed",
+                            UserOnly = false
                         });
                 });
 

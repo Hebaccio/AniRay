@@ -17,25 +17,33 @@ namespace AniRay.Model.Seeders
                     {
                         Id = 1,
                         Name = "In Progress",
-                        IsDeleted = false
+                        IsDeleted = false,
+                        ForUsers = false,
+                        ForEmployees = false,
                     },
                     new OrderStatus()
                     {
                         Id = 2,
                         Name = "Cancelled",
-                        IsDeleted = false
+                        IsDeleted = false,
+                        ForUsers = true,
+                        ForEmployees = false,
                     },
                     new OrderStatus()
                     {
                         Id = 3,
                         Name = "Rejected",
-                        IsDeleted = false
+                        IsDeleted = false,
+                        ForUsers = false,
+                        ForEmployees = true,
                     },
                     new OrderStatus()
                     {
                         Id = 4,
                         Name = "Processed",
-                        IsDeleted = false
+                        IsDeleted = false,
+                        ForUsers = false,
+                        ForEmployees = true,
                     }
                 );
         }

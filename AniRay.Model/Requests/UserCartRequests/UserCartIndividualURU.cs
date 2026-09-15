@@ -2,6 +2,6 @@
 {
     public class UserCartIndividualURU
     {
-        public virtual BluRayCartUR BluRay { get; set; }
+        public UserCartIndividualBluRayURU BluRay { get; set; } = null!;
     }
 }

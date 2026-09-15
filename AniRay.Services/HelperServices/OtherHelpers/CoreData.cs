@@ -14,6 +14,25 @@ namespace AniRay.Services.HelperServices.OtherHelpers
             Processed = 4,
         }
 
+        /*
+        User:
+        Initial State = In Progress
+        User: In Progress -> Cancelled
+        Employee: In Progress -> Rejected / Processed
+
+        Cancelled:
+        User: N/A
+        Employee: N/A
+
+        Rejected: 
+        User: N/A 
+        Employee: N/A
+
+        Processed: 
+        User: N/A 
+        Employee: N/A
+        */
+
         public enum CoreUserRole
         {
             User = 1,

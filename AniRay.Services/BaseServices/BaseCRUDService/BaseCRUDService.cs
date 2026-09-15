@@ -31,19 +31,36 @@ namespace AniRay.Services.BaseServices.BaseCRUDService
             if (!IsDeleteForUsersAuthorized())
                 return new UnauthorizedResult();
 
-            TDbEntity entity = Mapper.Map<TDbEntity>(request);
+            await using var transaction = await Context.Database.BeginTransactionAsync(cancellationToken);
 
-            var validationResult = await BeforeInsertForUsers(request, entity, cancellationToken);
-            if (!validationResult.Success)
-                return new BadRequestObjectResult(new { message = validationResult.Message });
+            try
+            {
+                TDbEntity entity = Mapper.Map<TDbEntity>(request);
 
-            await Context.AddAsync(entity, cancellationToken);
-            await Context.SaveChangesAsync(cancellationToken);
+                var validationResult = await BeforeInsertForUsers(
+                    request,
+                    entity,
+                    cancellationToken);
 
-            await FinalInsertUserIncludes(entity, request);
+                if (!validationResult.Success)
+                    return new BadRequestObjectResult(
+                        new { message = validationResult.Message });
 
-            var mapped = Mapper.Map<TModelUser>(entity);
-            return new OkObjectResult(mapped);
+                await Context.AddAsync(entity, cancellationToken);
+                await Context.SaveChangesAsync(cancellationToken);
+
+                await FinalInsertUserIncludes(entity, request);
+
+                await transaction.CommitAsync(cancellationToken);
+
+                var mapped = Mapper.Map<TModelUser>(entity);
+                return new OkObjectResult(mapped);
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
         }
 
         public virtual Task FinalInsertUserIncludes(TDbEntity entity, TInsertUser request)
@@ -141,27 +158,45 @@ namespace AniRay.Services.BaseServices.BaseCRUDService
         #region Update - For Employees
         public virtual async Task<ActionResult<TModelEmployee>> UpdateEntityForEmployees(int id, TUpdateEmployee request, CancellationToken cancellationToken)
         {
-            if(!IsUpdateForEmployeesAuthorized())
+            if (!IsUpdateForEmployeesAuthorized())
                 return new UnauthorizedResult();
 
-            var set = Context.Set<TDbEntity>();
-            var entity = await set.FindAsync(id, cancellationToken);
+            await using var transaction = await Context.Database.BeginTransactionAsync(cancellationToken);
 
-            if (entity == null)
-                return new NotFoundObjectResult(new { message = "Entity not found." });
+            try
+            {
+                var set = Context.Set<TDbEntity>();
+                var entity = await set.FindAsync(id, cancellationToken);
 
-            var validationResult = await BeforeUpdateForEmployees(request, entity, cancellationToken);
-            if (!validationResult.Success)
-                return new BadRequestObjectResult(new { message = validationResult.Message });
+                if (entity == null)
+                    return new NotFoundObjectResult(
+                        new { message = "Entity not found." });
 
-            Mapper.Map(request, entity);
+                var validationResult = await BeforeUpdateForEmployees(
+                    request,
+                    entity,
+                    cancellationToken);
 
-            await Context.SaveChangesAsync(cancellationToken);
+                if (!validationResult.Success)
+                    return new BadRequestObjectResult(
+                        new { message = validationResult.Message });
 
-            await FinalUpdateEmployeeIncludes(entity, request);
+                Mapper.Map(request, entity);
 
-            var mapped = Mapper.Map<TModelEmployee>(entity);
-            return new OkObjectResult(mapped);
+                await Context.SaveChangesAsync(cancellationToken);
+
+                await FinalUpdateEmployeeIncludes(entity, request);
+
+                await transaction.CommitAsync(cancellationToken);
+
+                var mapped = Mapper.Map<TModelEmployee>(entity);
+                return new OkObjectResult(mapped);
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
         }
 
         public virtual bool IsUpdateForEmployeesAuthorized()

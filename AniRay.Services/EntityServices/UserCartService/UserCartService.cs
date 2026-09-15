@@ -29,7 +29,8 @@ namespace AniRay.Services.EntityServices.UserCartService
         }
         public override IQueryable<UserCart> AddGetByIdFiltersForUsers(IQueryable<UserCart> query)
         {
-            query = query.Include(uc => uc.BluRay).ThenInclude(ucb => ucb.BluRay);
+            query = query.Include(uc => uc.BluRay).ThenInclude(ucb => ucb.BluRay).ThenInclude(ucba => ucba.AudioFormat);
+            query = query.Include(uc => uc.BluRay).ThenInclude(ucb => ucb.BluRay).ThenInclude(ucbv => ucbv.VideoFormat);
             return query;
         }
         public override async Task<UserCart?> EntityGetTrigger(int? id, IQueryable<UserCart> query, CancellationToken cancellationToken)
@@ -92,14 +93,25 @@ namespace AniRay.Services.EntityServices.UserCartService
             return ServiceResult<bool>.Ok(true);
         }
 
+        public override async Task FinalUpdateUserIncludes(UserCart entity, UserCartURU? request)
+        {
+            await Context.Entry(entity).Collection(e => e.BluRay)
+                .Query().Include(b => b.BluRay)
+                .ThenInclude(b => b.AudioFormat).LoadAsync();
+
+            await Context.Entry(entity).Collection(e => e.BluRay)
+                .Query().Include(b => b.BluRay)
+                .ThenInclude(b => b.VideoFormat).LoadAsync();
+        }
+
         private ServiceResult<bool> ValidateRequest(UserCartURU request)
         {
             if (request == null)
                 return ServiceResult<bool>.Fail("Request cannot be null.");
 
             ServiceResult<bool> result;
-            result = UpsertHelper.ValidateStringLength(request.CartNotes, 1, 500, "Cart Notes", false);
-            if(!result.Success) return ServiceResult<bool>.Fail("Cart notes cannot be null.");
+            result = UpsertHelper.ValidateStringLength(request.CartNotes, 0, 100, "Cart Notes", true);
+            if(!result.Success) return ServiceResult<bool>.Fail($"{result.Message}");
 
             var items = request.BluRay ?? new List<BluRayCartUR>();
 
@@ -236,196 +248,124 @@ namespace AniRay.Services.EntityServices.UserCartService
         #region Other Methods
 
         #region Is BluRay In Cart
-        public async Task<ActionResult<BluRayCart>> IsBluRayInCart(int id, CancellationToken cancellationToken)
+        public async Task<ActionResult<UserCartIsBluRayInCart>> IsBluRayInCart(int id, CancellationToken cancellationToken)
         {
             if (!IsGetByIdForUsersAuthorized())
                 return new UnauthorizedResult();
 
-            IQueryable<BluRayCart> query = Context.Set<BluRayCart>().AsQueryable();
-            var entity = await EntityGetTriggerForBluRayInCart(id, query, cancellationToken);
+            var cart = await Context.Set<UserCart>().Where(uc => uc.UserId == _currentUser.UserId).FirstOrDefaultAsync(cancellationToken);
+
+            if (cart == null)
+                return new NotFoundObjectResult(false);
+
+            var entity = await Context.Set<BluRayCart>()
+                .Where(e =>EF.Property<int>(e, "UserCartId") == cart.Id && e.BluRay.Id == id)
+                .Select(e => new UserCartIsBluRayInCart
+                {
+                    UserCartId = EF.Property<int>(e, "UserCartId"),
+                    BluRayId = e.BluRay.Id,
+                    Amount = e.Amount
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
             if (entity == null)
                 return new NotFoundObjectResult(false);
 
             return new OkObjectResult(entity);
         }
-        public virtual async Task<BluRayCart?> EntityGetTriggerForBluRayInCart(int id, IQueryable<BluRayCart> query, CancellationToken cancellationToken)
-        {
-            var cart = await Context.Set<UserCart>().Where(uc => uc.UserId == _currentUser.UserId).FirstOrDefaultAsync(cancellationToken);
-            if (cart == null)
-                return null;
-
-            return await query.FirstOrDefaultAsync(e => EF.Property<int>(e, "UserCartId") == cart.Id && e.BluRay.Id == id, cancellationToken);
-        }
         #endregion
+              
+        #region Update Individual BluRay in Cart
 
-        #region Add Individual BluRay to Cart
-        public async Task<ActionResult<bool>> AddIndividualBluRayToCart(UserCartIndividualURU request, CancellationToken cancellationToken)
+        public async Task<ActionResult<bool>> UpdateIndividualBluRayInCart(UserCartIndividualURU request, CancellationToken cancellationToken)
         {
             if (!IsUpdateForUsersAuthorized())
                 return new UnauthorizedResult();
 
-            var entity = await EntityGetTriggerForUpdate(request, cancellationToken);
-            if (entity == null)
-                return new NotFoundObjectResult(new { message = "Entity not found." });
+            var entity = await EntityGetTriggerForUpdate(cancellationToken);
 
-            var validationResult = await BeforeUpdateForUsers(request, entity, cancellationToken);
+            if (entity == null)
+                return new NotFoundObjectResult(new { message = "User cart not found." });
+
+            var validationResult = await ValidateRequest(request, entity, cancellationToken);
+
             if (!validationResult.Success)
                 return new BadRequestObjectResult(new { message = validationResult.Message });
 
+            await UpdateBluRayInCart(request,entity,cancellationToken);
+            await RecalculateCartPrice(entity, cancellationToken);
             await Context.SaveChangesAsync(cancellationToken);
-            await FinalUpdateUserIncludes(entity, request);
+
             return new OkObjectResult(true);
         }
 
-        public async Task<UserCart?> EntityGetTriggerForUpdate(UserCartIndividualURU? request, CancellationToken cancellationToken)
+        private async Task<UserCart?> EntityGetTriggerForUpdate(CancellationToken cancellationToken)
         {
-            return await Context.Set<UserCart>().FirstOrDefaultAsync(e => EF.Property<int>(e, "UserId") == _currentUser.UserId, cancellationToken);
+            return await Context.Set<UserCart>().Include(uc => uc.BluRay).ThenInclude(uc=> uc.BluRay)
+                .FirstOrDefaultAsync(uc => EF.Property<int>(uc, "UserId") == _currentUser.UserId, cancellationToken);
         }
-        public Task FinalUpdateUserIncludes(UserCart entity, UserCartIndividualURU? request)
-        {
-            return Task.CompletedTask;
-        }
-        public async Task<ServiceResult<bool>> BeforeUpdateForUsers(UserCartIndividualURU request, UserCart entity, CancellationToken cancellationToken)
-        {
-            await Context.Entry(entity).Collection(c => c.BluRay).LoadAsync(cancellationToken);
 
-            var validationResult = await ValidateRequest(request, entity.BluRay, cancellationToken);
-            if (!validationResult.Success) return validationResult;
-
-            await AddBluRayToEntity(request, entity, cancellationToken);
-            await RecalculateCartPrice(entity, cancellationToken);
-
-            return ServiceResult<bool>.Ok(true);
-        }
-        private async Task<ServiceResult<bool>> ValidateRequest(UserCartIndividualURU request, ICollection<BluRayCart> bluRay, CancellationToken cancellationToken)
+        private async Task<ServiceResult<bool>> ValidateRequest(UserCartIndividualURU request, UserCart entity, CancellationToken cancellationToken)
         {
             if (request == null)
                 return ServiceResult<bool>.Fail("Request cannot be null.");
 
-            if (request.BluRay == null)
-                return ServiceResult<bool>.Fail("BluRay cannot be null.");
-
-            if (bluRay.Count >= 10)
-                return ServiceResult<bool>.Fail("Maximum amount of BluRay's in cart is 10.");
-
             if (request.BluRay.Amount < 0 || request.BluRay.Amount > 5)
-                return ServiceResult<bool>.Fail("Individual BluRay amount must be greater than zero and less than 5.");
+                return ServiceResult<bool>.Fail("Individual BluRay amount must be between 0 and 5.");
 
-            var validatingExistence = await ValidateBluRayExistence(request, cancellationToken);
-            if (!validatingExistence.Success) return validatingExistence;
+            var bluRayExists = await Context.Set<BluRay>()
+                .AnyAsync(b => b.Id == request.BluRay.BluRayId, cancellationToken);
 
-            if (BluRayAlreadyInCart(request, bluRay, cancellationToken))
-                return ServiceResult<bool>.Fail("Blu Ray is already in cart!");
+            if (!bluRayExists)
+                return ServiceResult<bool>.Fail("Blu Ray doesn't exist.");
+
+            var bluRayAlreadyInCart = entity.BluRay.Any(x => x.BluRayId == request.BluRay.BluRayId);
+
+            // Only prevent the operation when we are ADDING
+            // a new BluRay and the cart already has 10.
+            if (!bluRayAlreadyInCart && request.BluRay.Amount > 0 && entity.BluRay.Count >= 10)
+                return ServiceResult<bool>.Fail("Maximum amount of BluRays in cart is 10.");
 
             return ServiceResult<bool>.Ok(true);
         }
-        private async Task<ServiceResult<bool>> ValidateBluRayExistence(UserCartIndividualURU request, CancellationToken cancellationToken)
+
+        private async Task UpdateBluRayInCart(UserCartIndividualURU request, UserCart entity, CancellationToken cancellationToken)
         {
-            var existingBluRays = await Context.Set<BluRay>()
-                .Where(b => b.Id == request.BluRay.BluRayId)
-                .FirstOrDefaultAsync(cancellationToken);
+            var existingBluRay = entity.BluRay.FirstOrDefault(x => x.BluRayId == request.BluRay.BluRayId);
 
-            if (existingBluRays == null)
-                return ServiceResult<bool>.Fail("Blu Ray doesn't exist");
-
-            return ServiceResult<bool>.Ok(true);
-
-        }
-        private bool BluRayAlreadyInCart(UserCartIndividualURU request, ICollection<BluRayCart> bluRay, CancellationToken cancellationToken)
-        {
-            foreach(var item in bluRay)
+            // Already in cart
+            if (existingBluRay != null)
             {
-                if(request.BluRay.BluRayId == item.BluRayId)
-                    return true;
+                // Amount 0 = remove
+                if (request.BluRay.Amount == 0)
+                {
+                    entity.BluRay.Remove(existingBluRay);
+                }
+                else
+                {
+                    // Amount > 0 = update
+                    existingBluRay.Amount = request.BluRay.Amount;
+                }
+
+                return;
             }
-            return false;
-        }
-        private async Task AddBluRayToEntity(UserCartIndividualURU request, UserCart entity, CancellationToken cancellationToken)
-        {
-            await Context.Set<UserCart>().Where(uc => uc.UserId == entity.UserId).Include(uc => uc.BluRay).ThenInclude(uc=> uc.BluRay).FirstOrDefaultAsync(cancellationToken);
-            var bluRay = await Context.Set<BluRay>().Where(b => b.Id == request.BluRay.BluRayId).FirstOrDefaultAsync(cancellationToken);
+
+            // Not in cart + amount 0 = nothing to do
+            if (request.BluRay.Amount == 0)
+                return;
+
+            // Not in cart + amount > 0 = add
+            var bluRay = await Context.Set<BluRay>().FirstOrDefaultAsync(b => b.Id == request.BluRay.BluRayId, cancellationToken);
 
             entity.BluRay.Add(new BluRayCart
             {
                 UserCartId = entity.Id,
                 BluRayId = request.BluRay.BluRayId,
                 BluRay = bluRay!,
-                Amount = request.BluRay.Amount
+                Amount = request.BluRay.Amount,
             });
         }
-        #endregion
 
-        #region Remove Individual BluRays from Cart
-        public async Task<ActionResult<bool>> RemoveIndividualBluRayFromCart(int id, CancellationToken cancellationToken)
-        {
-            if (!IsUpdateForUsersAuthorized())
-                return new UnauthorizedResult();
-
-            var entity = await EntityGetTriggerForUpdate(id, cancellationToken);
-            if (entity == null)
-                return new NotFoundObjectResult(new { message = "Entity not found." });
-
-            var validationResult = await BeforeRemovingForUsers(id, entity, cancellationToken);
-            if (!validationResult.Success)
-                return new BadRequestObjectResult(new { message = validationResult.Message });
-
-            await Context.SaveChangesAsync(cancellationToken);
-            return new OkObjectResult(true);
-        }
-        public async Task<UserCart?> EntityGetTriggerForUpdate(int id, CancellationToken cancellationToken)
-        {
-            return await Context.Set<UserCart>().FirstOrDefaultAsync(e => EF.Property<int>(e, "UserId") == _currentUser.UserId, cancellationToken);
-        }
-        public async Task<ServiceResult<bool>> BeforeRemovingForUsers(int id, UserCart entity, CancellationToken cancellationToken)
-        {
-            await Context.Entry(entity).Collection(c => c.BluRay).LoadAsync(cancellationToken);
-
-            var validationResult = await ValidateRequestForRemoving(id, entity.BluRay, cancellationToken);
-            if (!validationResult.Success) return validationResult;
-
-            await RemoveBluRayFromEntity(id, entity, cancellationToken);
-            await RecalculateCartPrice(entity, cancellationToken);
-
-            return ServiceResult<bool>.Ok(true);
-        }
-        private async Task<ServiceResult<bool>> ValidateRequestForRemoving(int id, ICollection<BluRayCart> bluRay, CancellationToken cancellationToken)
-        {
-            var validatingExistence = await ValidateBluRayExistence(id, cancellationToken);
-            if (!validatingExistence.Success) return validatingExistence;
-
-            if (!BluRayInCart(id, bluRay, cancellationToken))
-                return ServiceResult<bool>.Fail("Blu Ray is not in cart!");
-
-            return ServiceResult<bool>.Ok(true);
-        }
-        private async Task<ServiceResult<bool>> ValidateBluRayExistence(int id, CancellationToken cancellationToken)
-        {
-            var existingBluRays = await Context.Set<BluRay>()
-                .Where(b => b.Id == id)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (existingBluRays == null)
-                return ServiceResult<bool>.Fail("Blu Ray doesn't exist");
-
-            return ServiceResult<bool>.Ok(true);
-
-        }
-        private bool BluRayInCart(int id, ICollection<BluRayCart> bluRay, CancellationToken cancellationToken)
-        {
-            foreach (var item in bluRay)
-            {
-                if (id == item.BluRayId)
-                    return true;
-            }
-            return false;
-        }
-        private async Task RemoveBluRayFromEntity(int id, UserCart entity, CancellationToken cancellationToken)
-        {
-            await Context.Set<UserCart>().Where(uc => uc.UserId == entity.UserId).Include(uc => uc.BluRay).ThenInclude(uc => uc.BluRay).FirstOrDefaultAsync(cancellationToken);
-            var bluRayCart = entity.BluRay.FirstOrDefault(x => x.BluRayId == id);
-            if (bluRayCart != null)
-                entity.BluRay.Remove(bluRayCart);
-        }
         #endregion
 
         #endregion
@@ -446,3 +386,176 @@ namespace AniRay.Services.EntityServices.UserCartService
 
     }
 }
+
+
+/*
+#region Add Individual BluRay to Cart
+public async Task<ActionResult<bool>> AddIndividualBluRayToCart(UserCartIndividualURU request, CancellationToken cancellationToken)
+{
+    if (!IsUpdateForUsersAuthorized())
+        return new UnauthorizedResult();
+
+    var entity = await EntityGetTriggerForUpdate(request, cancellationToken);
+    if (entity == null)
+        return new NotFoundObjectResult(new { message = "Entity not found." });
+
+    var validationResult = await BeforeUpdateForUsers(request, entity, cancellationToken);
+    if (!validationResult.Success)
+        return new BadRequestObjectResult(new { message = validationResult.Message });
+
+    await Context.SaveChangesAsync(cancellationToken);
+    await FinalUpdateUserIncludes(entity, request);
+    return new OkObjectResult(true);
+}
+
+public async Task<UserCart?> EntityGetTriggerForUpdate(UserCartIndividualURU? request, CancellationToken cancellationToken)
+{
+    return await Context.Set<UserCart>().FirstOrDefaultAsync(e => EF.Property<int>(e, "UserId") == _currentUser.UserId, cancellationToken);
+}
+public Task FinalUpdateUserIncludes(UserCart entity, UserCartIndividualURU? request)
+{
+    return Task.CompletedTask;
+}
+public async Task<ServiceResult<bool>> BeforeUpdateForUsers(UserCartIndividualURU request, UserCart entity, CancellationToken cancellationToken)
+{
+    await Context.Entry(entity).Collection(c => c.BluRay).LoadAsync(cancellationToken);
+
+    var validationResult = await ValidateRequest(request, entity.BluRay, cancellationToken);
+    if (!validationResult.Success) return validationResult;
+
+    await AddBluRayToEntity(request, entity, cancellationToken);
+    await RecalculateCartPrice(entity, cancellationToken);
+
+    return ServiceResult<bool>.Ok(true);
+}
+private async Task<ServiceResult<bool>> ValidateRequest(UserCartIndividualURU request, ICollection<BluRayCart> bluRay, CancellationToken cancellationToken)
+{
+    if (request == null)
+        return ServiceResult<bool>.Fail("Request cannot be null.");
+
+    if (request.BluRay == null)
+        return ServiceResult<bool>.Fail("BluRay cannot be null.");
+
+    if (bluRay.Count >= 10)
+        return ServiceResult<bool>.Fail("Maximum amount of BluRay's in cart is 10.");
+
+    if (request.BluRay.Amount < 0 || request.BluRay.Amount > 5)
+        return ServiceResult<bool>.Fail("Individual BluRay amount must be greater than zero and less than 5.");
+
+    var validatingExistence = await ValidateBluRayExistence(request, cancellationToken);
+    if (!validatingExistence.Success) return validatingExistence;
+
+    if (BluRayAlreadyInCart(request, bluRay, cancellationToken))
+        return ServiceResult<bool>.Fail("Blu Ray is already in cart!");
+
+    return ServiceResult<bool>.Ok(true);
+}
+private async Task<ServiceResult<bool>> ValidateBluRayExistence(UserCartIndividualURU request, CancellationToken cancellationToken)
+{
+    var existingBluRays = await Context.Set<BluRay>()
+        .Where(b => b.Id == request.BluRay.BluRayId)
+        .FirstOrDefaultAsync(cancellationToken);
+
+    if (existingBluRays == null)
+        return ServiceResult<bool>.Fail("Blu Ray doesn't exist");
+
+    return ServiceResult<bool>.Ok(true);
+
+}
+private bool BluRayAlreadyInCart(UserCartIndividualURU request, ICollection<BluRayCart> bluRay, CancellationToken cancellationToken)
+{
+    foreach(var item in bluRay)
+    {
+        if(request.BluRay.BluRayId == item.BluRayId)
+            return true;
+    }
+    return false;
+}
+private async Task AddBluRayToEntity(UserCartIndividualURU request, UserCart entity, CancellationToken cancellationToken)
+{
+    await Context.Set<UserCart>().Where(uc => uc.UserId == entity.UserId).Include(uc => uc.BluRay).ThenInclude(uc=> uc.BluRay).FirstOrDefaultAsync(cancellationToken);
+    var bluRay = await Context.Set<BluRay>().Where(b => b.Id == request.BluRay.BluRayId).FirstOrDefaultAsync(cancellationToken);
+
+    entity.BluRay.Add(new BluRayCart
+    {
+        UserCartId = entity.Id,
+        BluRayId = request.BluRay.BluRayId,
+        BluRay = bluRay!,
+        Amount = request.BluRay.Amount
+    });
+}
+#endregion
+
+#region Remove Individual BluRays from Cart
+public async Task<ActionResult<bool>> RemoveIndividualBluRayFromCart(int id, CancellationToken cancellationToken)
+{
+    if (!IsUpdateForUsersAuthorized())
+        return new UnauthorizedResult();
+
+    var entity = await EntityGetTriggerForUpdate(id, cancellationToken);
+    if (entity == null)
+        return new NotFoundObjectResult(new { message = "Entity not found." });
+
+    var validationResult = await BeforeRemovingForUsers(id, entity, cancellationToken);
+    if (!validationResult.Success)
+        return new BadRequestObjectResult(new { message = validationResult.Message });
+
+    await Context.SaveChangesAsync(cancellationToken);
+    return new OkObjectResult(true);
+}
+public async Task<UserCart?> EntityGetTriggerForUpdate(int id, CancellationToken cancellationToken)
+{
+    return await Context.Set<UserCart>().FirstOrDefaultAsync(e => EF.Property<int>(e, "UserId") == _currentUser.UserId, cancellationToken);
+}
+public async Task<ServiceResult<bool>> BeforeRemovingForUsers(int id, UserCart entity, CancellationToken cancellationToken)
+{
+    await Context.Entry(entity).Collection(c => c.BluRay).LoadAsync(cancellationToken);
+
+    var validationResult = await ValidateRequestForRemoving(id, entity.BluRay, cancellationToken);
+    if (!validationResult.Success) return validationResult;
+
+    await RemoveBluRayFromEntity(id, entity, cancellationToken);
+    await RecalculateCartPrice(entity, cancellationToken);
+
+    return ServiceResult<bool>.Ok(true);
+}
+private async Task<ServiceResult<bool>> ValidateRequestForRemoving(int id, ICollection<BluRayCart> bluRay, CancellationToken cancellationToken)
+{
+    var validatingExistence = await ValidateBluRayExistence(id, cancellationToken);
+    if (!validatingExistence.Success) return validatingExistence;
+
+    if (!BluRayInCart(id, bluRay, cancellationToken))
+        return ServiceResult<bool>.Fail("Blu Ray is not in cart!");
+
+    return ServiceResult<bool>.Ok(true);
+}
+private async Task<ServiceResult<bool>> ValidateBluRayExistence(int id, CancellationToken cancellationToken)
+{
+    var existingBluRays = await Context.Set<BluRay>()
+        .Where(b => b.Id == id)
+        .FirstOrDefaultAsync(cancellationToken);
+
+    if (existingBluRays == null)
+        return ServiceResult<bool>.Fail("Blu Ray doesn't exist");
+
+    return ServiceResult<bool>.Ok(true);
+
+}
+private bool BluRayInCart(int id, ICollection<BluRayCart> bluRay, CancellationToken cancellationToken)
+{
+    foreach (var item in bluRay)
+    {
+        if (id == item.BluRayId)
+            return true;
+    }
+    return false;
+}
+private async Task RemoveBluRayFromEntity(int id, UserCart entity, CancellationToken cancellationToken)
+{
+    await Context.Set<UserCart>().Where(uc => uc.UserId == entity.UserId).Include(uc => uc.BluRay).ThenInclude(uc => uc.BluRay).FirstOrDefaultAsync(cancellationToken);
+    var bluRayCart = entity.BluRay.FirstOrDefault(x => x.BluRayId == id);
+    if (bluRayCart != null)
+        entity.BluRay.Remove(bluRayCart);
+}
+#endregion
+*/
